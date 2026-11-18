@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF5EC">
+<meta name="description" content="냉장고에 있는 재료로 만들 수 있는 간단한 한국 가정식 요리를 추천해 주는 앱">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>냉장고 요리 추천</title>
+<style>
+  :root{
+    --bg:#FBF5EC;
+    --surface:#FFFFFF;
+    --ink:#2A211C;
+    --ink-2:#6B5E54;
+    --ink-3:#9C8F84;
+    --line:#EDE2D5;
+    --brand:#DE5B33;
+    --brand-dark:#B8431F;
+    --brand-soft:#FCEBE3;
+    --green:#1E7A55;
+    --green-soft:#E6F4EC;
+    --radius:20px;
+    --shadow:0 6px 18px rgba(122,84,54,.07), 0 1px 2px rgba(122,84,54,.05);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Roboto","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(900px 420px at 50% -12%, #FFF2E0 0%, rgba(255,242,224,0) 62%),
+      var(--bg);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  button{font-family:inherit;color:inherit;cursor:pointer}
+  button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid rgba(222,91,51,.55);outline-offset:2px}
+  .wrap{max-width:520px;margin:0 auto;padding:0 16px calc(40px + env(safe-area-inset-bottom))}
+
+  /* ── 상단 바 ───────────────────────────── */
+  .top{
+    position:sticky;top:0;z-index:30;
+    background:rgba(251,245,236,.92);
+    -webkit-backdrop-filter:saturate(160%) blur(14px);
+    backdrop-filter:saturate(160%) blur(14px);
+    border-bottom:1px solid rgba(237,226,213,.85);
+  }
+  .top-inner{max-width:520px;margin:0 auto;padding:12px 16px 8px;display:flex;align-items:center;gap:12px}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .brand-mark{
+    width:38px;height:38px;flex:0 0 38px;border-radius:13px;
+    background:linear-gradient(150deg,#FFE7CE,#FFD3B4);
+    display:grid;place-items:center;font-size:20px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.7);
+  }
+  .brand h1{margin:0;font-size:16.5px;font-weight:800;letter-spacing:-.4px;white-space:nowrap}
+  .brand p{margin:2px 0 0;font-size:10.5px;color:var(--ink-3);font-weight:600;letter-spacing:-.1px}
+  .stats{
+    margin-left:auto;display:flex;align-items:stretch;gap:0;
+    background:var(--surface);border:1px solid var(--line);border-radius:15px;
+    padding:6px 4px;box-shadow:var(--shadow);flex:0 0 auto;
+  }
+  .stat{padding:0 10px;text-align:center;min-width:52px}
+  .stat b{display:block;font-size:16px;font-weight:800;line-height:1.15;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+  .stat b.hot{color:var(--brand)}
+  .stat span{display:block;font-size:9.5px;color:var(--ink-3);font-weight:700;margin-top:1px;letter-spacing:-.1px}
+  .stat + .stat{border-left:1px solid var(--line)}
+
+  .filterbar{
+    max-width:520px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:0 16px 10px;
+  }
+  .fpill{
+    display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+    border-radius:999px;padding:7px 4px;font-size:12px;font-weight:700;
+    letter-spacing:-.4px;-webkit-tap-highlight-color:transparent;transition:background .16s,color .16s,border-color .16s;
+  }
+  .fpill[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .fpill .dot{font-size:11px}
+
+  /* ── 냉장고 카드 ───────────────────────── */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .fridge{padding:14px;margin-top:14px}
+  .fridge-head{display:flex;align-items:center;gap:8px}
+  .fridge-title{font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px;letter-spacing:-.3px}
+  .badge-count{
+    background:var(--brand-soft);color:var(--brand-dark);
+    font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;font-variant-numeric:tabular-nums;
+  }
+  .toggle-pick{
+    margin-left:auto;border:0;background:var(--brand-soft);color:var(--brand-dark);
+    border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:800;letter-spacing:-.2px;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .toggle-pick .caret{font-size:9px;transform:translateY(-1px)}
+  .picked-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .picked-row:empty{display:none}
+  .pchip{
+    display:inline-flex;align-items:center;gap:5px;
+    background:var(--green-soft);color:var(--green);
+    border-radius:999px;padding:5px 5px 5px 10px;font-size:12.5px;font-weight:800;letter-spacing:-.2px;
+  }
+  .pchip .x{
+    border:0;background:rgba(30,122,85,.13);color:var(--green);
+    width:19px;height:19px;border-radius:50%;font-size:11px;line-height:1;
+    display:grid;place-items:center;padding:0;
+  }
+  .hint{font-size:12px;color:var(--ink-3);margin-top:10px;line-height:1.55;letter-spacing:-.1px}
+
+  .picker{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
+  .picker[hidden]{display:none}
+  .search-row{display:flex;gap:8px}
+  .search-row input{
+    flex:1;min-width:0;
+    border:1px solid var(--line);background:#FCFAF6;border-radius:13px;
+    padding:11px 13px;font-size:14px;color:var(--ink);font-family:inherit;
+    -webkit-appearance:none;appearance:none;
+  }
+  .search-row input::placeholder{color:#B7A99C}
+  .search-row input:focus{outline:none;border-color:#EFB49C;background:#fff}
+  .add-btn{
+    flex:0 0 auto;border:0;border-radius:13px;background:var(--ink);color:#fff;
+    padding:0 14px;font-size:12.5px;font-weight:800;letter-spacing:-.2px;
+  }
+  .add-btn[disabled]{opacity:.35}
+
+  .cat-tabs{display:flex;gap:6px;overflow-x:auto;padding:11px 0 9px;scrollbar-width:none}
+  .cat-tabs::-webkit-scrollbar{display:none}
+  .cat-tab{
+    flex:0 0 auto;font-size:12px;font-weight:800;letter-spacing:-.2px;
+    padding:7px 11px;border-radius:10px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink-2);
+  }
+  .cat-tab[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+  .chipgrid{display:flex;flex-wrap:wrap;gap:7px}
+  .group-label{width:100%;font-size:10.5px;font-weight:800;color:var(--ink-3);letter-spacing:.2px;margin:8px 0 0}
+  .group-label:first-child{margin-top:0}
+  .chip{
+    display:inline-flex;align-items:center;gap:4px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    border-radius:999px;padding:9px 13px;font-size:13.5px;font-weight:700;letter-spacing:-.2px;
+    min-height:38px;-webkit-tap-highlight-color:transparent;
+    transition:background .14s,border-color .14s,color .14s,transform .1s;
+  }
+  .chip:active{transform:scale(.96)}
+  .chip[aria-pressed="true"]{background:var(--brand-soft);border-color:#F2BB9F;color:var(--brand-dark)}
+  .chip[aria-pressed="true"]::before{content:"✓";font-size:10.5px;font-weight:900}
+  .chip .del{
+    border:0;background:rgba(222,91,51,.12);color:var(--brand-dark);
+    width:17px;height:17px;border-radius:50%;font-size:10px;line-height:1;
+    display:grid;place-items:center;padding:0;margin-left:1px;
+  }
+  .no-result{font-size:12.5px;color:var(--ink-3);padding:6px 0 2px;line-height:1.6}
+  .no-result b{color:var(--ink-2)}
+  .picker-foot{display:flex;align-items:center;gap:8px;margin-top:14px}
+  .ghost-danger{
+    border:1px solid var(--line);background:transparent;color:var(--ink-3);
+    border-radius:11px;padding:10px 12px;font-size:12px;font-weight:700;
+  }
+  .primary-sm{
+    margin-left:auto;border:0;border-radius:12px;background:var(--brand);color:#fff;
+    padding:11px 20px;font-size:13px;font-weight:800;letter-spacing:-.2px;
+    box-shadow:0 4px 12px rgba(222,91,51,.24);
+  }
+
+  /* ── 목록 ─────────────────────────────── */
+  .list-head{display:flex;align-items:center;gap:8px;margin:22px 2px 10px}
+  .list-title{font-size:15px;font-weight:900;letter-spacing:-.4px;display:flex;align-items:baseline;gap:6px}
+  .list-title span{font-size:12px;font-weight:700;color:var(--ink-3)}
+  .sort-btn{
+    margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+    border-radius:999px;padding:7px 11px;font-size:11.5px;font-weight:800;letter-spacing:-.2px;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .sort-btn .arrow{font-size:10px;color:var(--ink-3)}
+
+  .dish{
+    position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;
+    padding:14px;box-shadow:var(--shadow);margin-bottom:10px;
+    transition:transform .12s,border-color .16s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .dish:active{transform:scale(.992)}
+  @media (hover:hover){.dish{cursor:pointer}.dish:hover{border-color:#E6C9B4}}
+  .dish.zero{background:#FDFBF7;border-style:dashed;box-shadow:none}
+  .dish.no-sel .match,.dish.no-sel .row-chips{display:none}
+  .dish-top{display:flex;gap:11px;align-items:flex-start}
+  .dish-emoji{
+    width:44px;height:44px;flex:0 0 44px;border-radius:14px;
+    background:linear-gradient(150deg,#FFF4E6,#FFECDA);
+    display:grid;place-items:center;font-size:22px;line-height:1;
+  }
+  .dish-main{min-width:0;flex:1}
+  .dish-name{font-size:15.5px;font-weight:800;letter-spacing:-.4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .dish-sub{font-size:11.5px;color:var(--ink-3);font-weight:600;margin-top:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .dish-sub .sep{width:2px;height:2px;border-radius:50%;background:#D8CABA}
+  .ready-badge{
+    font-size:10px;font-weight:900;color:#fff;background:var(--green);
+    padding:2px 6px;border-radius:6px;letter-spacing:-.1px;
+  }
+  .spicy{
+    font-size:11px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:-.2px;
+    white-space:nowrap;
+  }
+  .spicy.lv0{background:#EAF3FB;color:#2C6285}
+  .spicy.lv1{background:#FFF1E2;color:#B4611A}
+  .spicy.lv2{background:#FDE7E2;color:#AE2F18}
+
+  .match{display:flex;align-items:center;gap:9px;margin-top:12px}
+  .match-bar{flex:1;height:6px;border-radius:99px;background:#F1E8DC;overflow:hidden}
+  .match-fill{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F2B183,#DE5B33);transition:width .3s ease}
+  .dish.zero .match-fill{background:#DDD2C6}
+  .match-pct{font-size:11.5px;font-weight:900;color:var(--brand-dark);min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+  .dish.zero .match-pct{color:var(--ink-3)}
+  .match-label{font-size:10.5px;font-weight:700;color:var(--ink-3);min-width:0}
+
+  .row-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .mini{
+    display:inline-flex;align-items:center;gap:3px;font-size:11.5px;padding:4px 8px;border-radius:8px;
+    letter-spacing:-.2px;font-weight:700;
+  }
+  .mini.have{background:var(--green-soft);color:var(--green)}
+  .mini.need{background:#F6F1EA;color:#A2958A;font-weight:600}
+  .mini.need::before{content:"+";font-size:10px;opacity:.7}
+  .mini.rest{background:transparent;color:var(--ink-3);font-weight:700;padding-left:2px}
+
+  .more{
+    width:100%;background:var(--surface);border:1px dashed #E2D3C2;border-radius:14px;
+    padding:14px;font-size:13px;font-weight:800;color:var(--ink-2);letter-spacing:-.2px;
+  }
+  .empty{
+    background:var(--surface);border:1px dashed #E2D3C2;border-radius:18px;
+    padding:34px 22px;text-align:center;color:var(--ink-3);font-size:13px;line-height:1.65;
+  }
+  .empty .big{font-size:30px;display:block;margin-bottom:8px}
+  .empty b{color:var(--ink-2)}
+  .empty button{
+    margin-top:14px;border:0;background:var(--brand-soft);color:var(--brand-dark);
+    border-radius:999px;padding:10px 16px;font-size:12.5px;font-weight:800;
+  }
+
+  /* ── 상세 시트 ────────────────────────── */
+  .sheet-wrap{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+  .sheet-wrap[hidden]{display:none}
+  .backdrop{position:absolute;inset:0;background:rgba(42,33,28,.44);opacity:0;transition:opacity .24s}
+  .sheet-wrap.show .backdrop{opacity:1}
+  .sheet{
+    position:relative;width:100%;max-width:520px;background:var(--bg);
+    border-radius:26px 26px 0 0;max-height:91vh;display:flex;flex-direction:column;
+    transform:translateY(100%);transition:transform .3s cubic-bezier(.22,.85,.3,1);
+    box-shadow:0 -10px 40px rgba(42,33,28,.18);
+  }
+  .sheet-wrap.show .sheet{transform:translateY(0)}
+  .grab{width:44px;height:5px;border-radius:99px;background:#DFD1C2;margin:10px auto 0;flex:0 0 auto}
+  .sheet-close{
+    position:absolute;top:14px;right:14px;z-index:2;
+    width:34px;height:34px;border-radius:50%;border:0;
+    background:rgba(255,255,255,.86);color:var(--ink-2);font-size:16px;line-height:1;
+    display:grid;place-items:center;box-shadow:0 2px 8px rgba(122,84,54,.12);
+  }
+  .sheet-body{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px 18px 14px;overscroll-behavior:contain}
+  .d-hero{display:flex;gap:13px;align-items:center;padding:8px 40px 14px 0}
+  .d-emoji{
+    width:56px;height:56px;flex:0 0 56px;border-radius:18px;
+    background:linear-gradient(150deg,#FFF2E0,#FFE4CB);display:grid;place-items:center;font-size:28px;
+  }
+  .d-name{font-size:19px;font-weight:900;letter-spacing:-.6px}
+  .d-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+  .tag{
+    font-size:11px;font-weight:800;background:var(--surface);border:1px solid var(--line);
+    padding:3px 8px;border-radius:8px;color:var(--ink-2);letter-spacing:-.2px;
+  }
+  .sum-box{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 13px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .sum-box .txt{font-size:12.5px;font-weight:800;letter-spacing:-.2px}
+  .sum-box .txt small{display:block;font-size:11px;font-weight:600;color:var(--ink-3);margin-top:2px}
+  .sum-box .bar{flex:1;height:7px;border-radius:99px;background:#F1E8DC;overflow:hidden;min-width:52px}
+  .sum-box .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#F2B183,#DE5B33)}
+  .sum-box.ok{background:var(--green-soft);border-color:#CDE8DA}
+  .sum-box.ok .txt{color:var(--green)}
+  .sum-box.ok .bar i{background:var(--green)}
+
+  .sec-h{font-size:13px;font-weight:900;margin:18px 0 8px;display:flex;align-items:center;gap:6px;letter-spacing:-.3px}
+  .sec-h .cnt{font-size:11px;font-weight:700;color:var(--ink-3)}
+  .ing-table{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .ing-row{display:flex;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid #F5EDE3}
+  .ing-row:last-child{border-bottom:0}
+  .ing-dot{width:6px;height:6px;border-radius:50%;background:#DED2C5;flex:0 0 6px}
+  .ing-name{font-size:13px;font-weight:700;letter-spacing:-.2px}
+  .ing-amt{margin-left:auto;font-size:12px;color:var(--ink-3);font-weight:600;white-space:nowrap}
+  .ing-state{font-size:10px;font-weight:900;padding:3px 6px;border-radius:6px;white-space:nowrap;letter-spacing:-.1px}
+  .ing-row.have .ing-dot{background:var(--green)}
+  .ing-row.have .ing-state{background:var(--green-soft);color:var(--green)}
+  .ing-row.miss .ing-name{color:#8A7D72}
+  .ing-row.miss .ing-state{background:#F3EDE5;color:#9C8F84}
+  .ing-row.base .ing-state{background:#F1F0F6;color:#847E97}
+  .ing-row.opt .ing-state{background:#FFF6E6;color:#A87520}
+  .ing-row.opt.have .ing-state{background:var(--green-soft);color:var(--green)}
+  .ing-sub{font-size:11px;font-weight:800;color:var(--ink-3);padding:9px 13px 3px;background:#FDFBF7;letter-spacing:-.1px}
+
+  .steps{display:flex;flex-direction:column;gap:11px}
+  .step{display:flex;gap:10px;font-size:13.5px;line-height:1.65;letter-spacing:-.15px}
+  .step-n{
+    flex:0 0 23px;height:23px;border-radius:50%;background:var(--brand);color:#fff;
+    font-size:11.5px;font-weight:900;display:grid;place-items:center;margin-top:1px;
+  }
+  .tip{
+    background:#FFF8E8;border:1px solid #F2E2BE;border-radius:14px;
+    padding:12px 14px;font-size:12.5px;line-height:1.62;color:#7A5C1B;margin-top:16px;letter-spacing:-.15px;
+  }
+  .tip b{display:block;font-size:11px;font-weight:900;color:#9A7420;margin-bottom:3px}
+  .d-cols{display:block}
+  .sheet-foot{
+    position:sticky;bottom:0;flex:0 0 auto;
+    background:var(--bg);
+    border-top:1px solid var(--line);
+    padding:12px 18px calc(14px + env(safe-area-inset-bottom));
+  }
+  .btn-yt{
+    display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    background:var(--brand);color:#fff;border:0;border-radius:16px;padding:15px;
+    font-size:14.5px;font-weight:900;text-decoration:none;letter-spacing:-.3px;
+    box-shadow:0 8px 18px rgba(222,91,51,.26);
+  }
+  .btn-yt:active{transform:translateY(1px)}
+  .btn-yt .ic{
+    width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.22);
+    display:grid;place-items:center;font-size:11px;
+  }
+
+  .toast{
+    position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));
+    transform:translate(-50%,16px);background:#2A211C;color:#fff;
+    font-size:12.5px;font-weight:700;padding:11px 16px;border-radius:999px;
+    opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;z-index:90;
+    max-width:86vw;text-align:center;letter-spacing:-.2px;box-shadow:0 8px 20px rgba(42,33,28,.25);
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  body.locked{overflow:hidden}
+
+  /* 모바일: 상세 내용이 하단 버튼 뒤로 잘릴 때 자연스럽게 이어지도록 */
+  @media (max-width:767px){
+    .sheet-body{
+      -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 20px),rgba(0,0,0,.15) 100%);
+      mask-image:linear-gradient(to bottom,#000 calc(100% - 20px),rgba(0,0,0,.15) 100%);
+    }
+  }
+
+  /* ── 넓은 화면(노트북·데스크톱) ─────────────── */
+  @media (min-width:768px){
+    body{background:radial-gradient(1200px 520px at 50% -14%, #FFF2E0 0%, rgba(255,242,224,0) 60%), #F6EEE3}
+    .top-inner{max-width:1100px;padding:16px 28px 10px;gap:18px}
+    .brand{gap:12px}
+    .brand-mark{width:46px;height:46px;flex-basis:46px;border-radius:15px;font-size:24px}
+    .brand h1{font-size:23px;letter-spacing:-.6px}
+    .brand p{font-size:12px;margin-top:3px}
+    .stats{padding:8px 6px;border-radius:18px}
+    .stat{padding:0 18px;min-width:82px}
+    .stat b{font-size:23px}
+    .stat span{font-size:11px;margin-top:2px}
+    .filterbar{max-width:1100px;padding:0 28px 14px;gap:8px;display:flex}
+    .fpill{padding:9px 16px;font-size:14px;letter-spacing:-.2px}
+    .wrap{max-width:1100px;padding:0 28px 64px}
+
+    .fridge{padding:20px 22px;margin-top:22px;border-radius:24px}
+    .fridge-title{font-size:16.5px}
+    .badge-count{font-size:12px;padding:3px 9px}
+    .toggle-pick{padding:10px 17px;font-size:13.5px}
+    .pchip{font-size:13.5px;padding:6px 6px 6px 12px}
+    .pchip .x{width:21px;height:21px;font-size:12px}
+    .hint{font-size:13px}
+    .picker{margin-top:16px;padding-top:16px}
+    .search-row{max-width:520px}
+    .search-row input{padding:13px 16px;font-size:15px}
+    .add-btn{padding:0 20px;font-size:13.5px}
+    .cat-tab{font-size:13px;padding:9px 14px}
+    .chip{font-size:14.5px;padding:10px 16px;min-height:42px}
+    .chip .del{width:19px;height:19px;font-size:11px}
+    .picker-foot{margin-top:18px}
+    .ghost-danger{font-size:13px;padding:11px 14px}
+    .primary-sm{font-size:14px;padding:12px 26px}
+
+    .list-head{margin:32px 2px 16px}
+    .list-title{font-size:19px;gap:8px}
+    .list-title span{font-size:13px}
+    .sort-btn{font-size:12.5px;padding:9px 14px}
+    #recipeList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+    .dish{margin-bottom:0;padding:18px;border-radius:20px}
+    .dish-emoji{width:50px;height:50px;flex-basis:50px;font-size:25px;border-radius:16px}
+    .dish-name{font-size:17px}
+    .dish-sub{font-size:12.5px;margin-top:5px}
+    .spicy{font-size:11.5px;padding:4px 9px}
+    .match{margin-top:14px}
+    .mini{font-size:12.5px;padding:5px 9px}
+    .row-chips{gap:6px;margin-top:12px}
+    .more,.empty{grid-column:1/-1}
+    .more{padding:16px;font-size:13.5px}
+    .empty{padding:52px 26px;font-size:14.5px}
+    .empty .big{font-size:36px}
+
+    .sheet-wrap{align-items:center;padding:26px}
+    .sheet{max-width:860px;border-radius:26px;max-height:86vh;box-shadow:0 24px 60px rgba(42,33,28,.24)}
+    .grab{display:none}
+    .sheet-close{top:16px;right:16px;width:38px;height:38px;font-size:17px;background:#fff;border:1px solid var(--line)}
+    .sheet-body{padding:28px 32px 8px}
+    .d-hero{padding:0 48px 16px 0;gap:16px}
+    .d-emoji{width:68px;height:68px;flex-basis:68px;font-size:34px;border-radius:20px}
+    .d-name{font-size:27px;letter-spacing:-.9px}
+    .d-tags{gap:6px;margin-top:9px}
+    .tag{font-size:12px;padding:4px 10px}
+    .sum-box{padding:14px 16px;max-width:520px}
+    .sum-box .txt{font-size:13.5px}
+    .d-cols{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:26px;align-items:start}
+    .sec-h{font-size:15px;margin:22px 0 10px}
+    .d-cols .sec-h:first-child{margin-top:6px}
+    .ing-row{padding:11px 14px}
+    .ing-name{font-size:14px}
+    .ing-amt{font-size:13px}
+    .step{font-size:14.5px;line-height:1.7}
+    .step-n{flex-basis:25px;height:25px;font-size:12.5px}
+    .tip{font-size:13.5px;padding:14px 16px;margin-top:14px}
+    .sheet-foot{padding:16px 32px calc(20px + env(safe-area-inset-bottom))}
+    .btn-yt{max-width:420px;margin:0 auto;padding:16px;font-size:15.5px}
+  }
+  @media (min-width:1080px){
+    #recipeList{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition-duration:.01ms !important;animation-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<noscript><p style="margin:16px;padding:14px;border-radius:12px;background:#FFF3E2;font:600 14px/1.6 -apple-system,'Malgun Gothic',sans-serif;color:#8A5A2B">이 앱을 쓰려면 브라우저의 자바스크립트가 켜져 있어야 해요.</p></noscript>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">🍳</div>
+      <div>
+        <h1>냉장고 요리 추천</h1>
+        <p>있는 재료로 오늘 한 끼</p>
+      </div>
+    </div>
+    <div class="stats" role="status" aria-live="polite">
+      <div class="stat"><b id="statIng">0</b><span>냉장고 재료</span></div>
+      <div class="stat"><b id="statDish" class="hot">0</b><span>매칭 요리</span></div>
+    </div>
+  </div>
+  <div class="filterbar" id="filterbar" role="group" aria-label="매운 정도 필터"></div>
+</header>
+
+<main class="wrap">
+  <section class="card fridge" aria-labelledby="fridgeTitle">
+    <div class="fridge-head">
+      <div class="fridge-title" id="fridgeTitle">🧊 냉장고 재료 <span class="badge-count" id="fridgeCount">0</span></div>
+      <button class="toggle-pick" id="togglePick" aria-expanded="false" aria-controls="picker">재료 고르기 <span class="caret" aria-hidden="true">▼</span></button>
+    </div>
+    <div class="picked-row" id="pickedRow"></div>
+    <p class="hint" id="fridgeHint">냉장고에 있는 재료를 골라 보세요. 고른 재료로 만들 수 있는 요리를 바로 찾아 드려요.</p>
+
+    <div class="picker" id="picker" hidden>
+      <div class="search-row">
+        <input id="searchInput" type="search" placeholder="재료 검색 (예: 양파, 두부)" autocomplete="off" enterkeyhint="done" aria-label="재료 검색">
+        <button class="add-btn" id="addBtn" disabled>추가</button>
+      </div>
+      <div class="cat-tabs" id="catTabs" role="tablist" aria-label="재료 카테고리"></div>
+      <div class="chipgrid" id="chipGrid"></div>
+      <div class="picker-foot">
+        <button class="ghost-danger" id="clearAll">선택 초기화</button>
+        <button class="primary-sm" id="donePick">완료</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="list-head">
+    <div class="list-title" id="listTitle">추천 요리</div>
+    <button class="sort-btn" id="sortBtn" aria-label="정렬 기준 바꾸기"><span id="sortLabel">매칭률 순</span><span class="arrow" aria-hidden="true">⇅</span></button>
+  </div>
+  <div id="recipeList"></div>
+</main>
+
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dName" aria-describedby="dMeta">
+    <div class="grab" aria-hidden="true"></div>
+    <button class="sheet-close" id="sheetClose" aria-label="닫기">✕</button>
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-foot">
+      <a class="btn-yt" id="ytBtn" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+        <span class="ic" aria-hidden="true">▶</span>유튜브 레시피 영상 보기
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ── 재료 카테고리 ─────────────────────────────────────────── */
+var CATS = [
+  { id:'veg', name:'채소·버섯', emoji:'🥬', items:[
+    '양파','대파','쪽파','마늘','생강','감자','고구마','당근','애호박','오이','가지','양배추',
+    '배추','무','시금치','콩나물','숙주나물','부추','상추','깻잎','청양고추','홍고추','파프리카',
+    '토마토','브로콜리','새송이버섯','표고버섯','느타리버섯','팽이버섯'
+  ]},
+  { id:'meat', name:'고기·해물', emoji:'🍖', items:[
+    '삼겹살','대패삼겹살','돼지고기','다진 돼지고기','닭다리살','닭가슴살','소고기','다진 소고기',
+    '오징어','새우','바지락','멸치','다시마','미역'
+  ]},
+  { id:'egg', name:'달걀·두부·유제품', emoji:'🥚', items:[
+    '달걀','두부','순두부','우유','치즈','버터'
+  ]},
+  { id:'carb', name:'밥·면·떡', emoji:'🍚', items:[
+    '밥','라면','우동면','소면','당면','떡볶이떡','떡국떡','식빵','부침가루','밀가루','튀김가루'
+  ]},
+  { id:'sauce', name:'양념·소스', emoji:'🧂', items:[
+    '간장','고추장','된장','고춧가루','설탕','참기름','들기름','식초','맛술','굴소스','마요네즈',
+    '케첩','물엿','카레가루','들깨가루'
+  ]},
+  { id:'etc', name:'가공·기타', emoji:'🥫', items:[
+    '김치','스팸','햄','소시지','베이컨','참치캔','어묵','김','만두'
+  ]}
+];
+
+/* 요리 데이터
+   ing: { n:재료명, a:분량, b:기본 양념(매칭 제외), o:선택 재료(매칭 제외) }
+   spicy: 0 순한맛 / 1 약간 매움 / 2 매움                                     */
+var RECIPES = [
+  {
+    id:'eggroll', name:'계란말이', emoji:'🍳', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'달걀',a:'4개'}, {n:'대파',a:'1/2대'}, {n:'당근',a:'1/4개'},
+      {n:'소금',a:'약간',b:1}, {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '달걀 4개를 그릇에 깨고 소금 한 꼬집을 넣어 곱게 풀어요.',
+      '대파와 당근은 잘게 다져 달걀물에 섞어요.',
+      '약한 불로 달군 팬에 식용유를 얇게 두르고 달걀물 절반을 부어요.',
+      '가장자리가 살짝 익으면 한쪽부터 말아 넘기고, 남은 달걀물을 부어 이어서 말아요.',
+      '한 김 식힌 뒤 도마에 옮겨 2cm 폭으로 썰어요.'
+    ],
+    tip:'불을 약하게 유지하고 팬의 기름은 키친타월로 살짝 닦아 내면 계란말이가 부드럽게 말려요.'
+  },
+  {
+    id:'soy-egg-rice', name:'간장계란밥', emoji:'🍚', cat:'밥·면', spicy:0, time:5, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'밥',a:'1공기'}, {n:'달걀',a:'1개'}, {n:'간장',a:'1큰술'},
+      {n:'참기름',a:'1작은술'}, {n:'대파',a:'1/4대'}
+    ],
+    steps:[
+      '따뜻한 밥을 그릇에 담아요.',
+      '달걀은 흰자와 노른자가 살아 있는 반숙 프라이로 부쳐요.',
+      '간장과 참기름을 섞어 밥 위에 고루 뿌려요.',
+      '달걀 프라이를 올리고 송송 썬 대파를 얹어요.',
+      '먹기 직전에 노른자를 터뜨려 비벼요.'
+    ],
+    tip:'간장 1큰술에 참기름 1작은술, 설탕 한 꼬집을 섞으면 더 맛있어요.'
+  },
+  {
+    id:'kimchi-fried-rice', name:'김치볶음밥', emoji:'🍳', cat:'밥·면', spicy:1, time:10, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'밥',a:'1공기'}, {n:'김치',a:'1/2컵'}, {n:'달걀',a:'1개'},
+      {n:'대파',a:'1/2대'}, {n:'간장',a:'1/2큰술'}, {n:'설탕',a:'1/2작은술'},
+      {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '김치는 잘게 썰고 대파는 송송 썰어요.',
+      '팬에 기름을 두르고 대파를 볶아 파기름을 내요.',
+      '김치를 넣고 2분쯤 볶다가 설탕과 간장을 넣어요.',
+      '밥을 넣고 김치국물 2큰술과 함께 고루 볶아요.',
+      '그릇에 담고 달걀 프라이를 올려요.'
+    ],
+    tip:'김치 국물을 넣으면 맛이 깊어지고, 하루 지난 냉밥이 더 고슬고슬해요.'
+  },
+  {
+    id:'tofu-kimchi', name:'두부김치', emoji:'🍲', cat:'반찬', spicy:1, time:15, level:'보통', serve:'2인분',
+    ing:[
+      {n:'두부',a:'1/2모'}, {n:'김치',a:'1컵'}, {n:'대파',a:'1/2대'}, {n:'설탕',a:'1/2작은술'},
+      {n:'삼겹살',a:'100g',o:1}, {n:'고춧가루',a:'1작은술',o:1}, {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '두부를 1cm 두께로 썰어 키친타월로 물기를 빼요.',
+      '팬에 기름을 두르고 두부를 앞뒤로 노릇하게 부쳐 접시에 담아요.',
+      '같은 팬에 삼겹살을 볶다가 김치와 설탕을 넣고 5분쯤 볶아요.',
+      '고춧가루와 김치국물 3큰술을 넣고 국물이 살짝 졸 때까지 볶아요.',
+      '두부 위에 볶은 김치를 올리고 대파를 뿌려요.'
+    ],
+    tip:'두부는 부치기 직전에 물기를 빼야 기름이 튀지 않고 모양이 예뻐요.'
+  },
+  {
+    id:'sundubu', name:'순두부찌개', emoji:'🍲', cat:'국·찌개', spicy:2, time:15, level:'보통', serve:'2인분',
+    ing:[
+      {n:'순두부',a:'1봉'}, {n:'달걀',a:'1개'}, {n:'대파',a:'1대'}, {n:'양파',a:'1/2개'},
+      {n:'고춧가루',a:'1.5큰술'}, {n:'멸치',a:'5마리'}, {n:'다시마',a:'1장'},
+      {n:'간장',a:'1큰술'}, {n:'마늘',a:'1작은술'}, {n:'다진 돼지고기',a:'100g',o:1}
+    ],
+    steps:[
+      '냄비에 물 500ml, 멸치, 다시마를 넣고 7분 끓여 육수를 내요. 다시마는 5분 뒤 건져요.',
+      '팬에 기름과 고춧가루, 마늘을 넣고 약한 불에서 고추기름을 내요.',
+      '다진 돼지고기를 넣고 볶다가 육수를 부어요.',
+      '끓어오르면 순두부를 숟가락으로 떠 넣고 양파를 넣어 3분 끓여요.',
+      '간장으로 간하고 달걀을 풀어 넣은 뒤 대파를 올려요.'
+    ],
+    tip:'고춧가루를 기름에 먼저 볶으면 색이 곱고 매운맛이 부드러워져요.'
+  },
+  {
+    id:'doenjang', name:'된장찌개', emoji:'🍲', cat:'국·찌개', spicy:1, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'된장',a:'2큰술'}, {n:'두부',a:'1/2모'}, {n:'애호박',a:'1/3개'}, {n:'감자',a:'1개'},
+      {n:'양파',a:'1/2개'}, {n:'대파',a:'1대'}, {n:'청양고추',a:'1개'}, {n:'마늘',a:'1작은술'},
+      {n:'멸치',a:'5마리'}, {n:'다시마',a:'1장'}
+    ],
+    steps:[
+      '물 600ml에 멸치와 다시마를 넣고 7분 끓여 육수를 내요.',
+      '감자를 납작하게 썰어 먼저 넣고 5분 끓여요.',
+      '된장을 체에 걸러 풀고 애호박, 양파, 두부를 넣어요.',
+      '청양고추와 마늘을 넣고 5분 더 끓여요.',
+      '대파를 넣고 한소끔 끓여 마무리해요.'
+    ],
+    tip:'된장은 체에 걸러 넣으면 덩어리 없이 부드럽고, 감자를 먼저 넣어야 속까지 익어요.'
+  },
+  {
+    id:'spam-mayo', name:'스팸마요덮밥', emoji:'🍱', cat:'밥·면', spicy:0, time:10, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'밥',a:'1공기'}, {n:'스팸',a:'1/2캔'}, {n:'달걀',a:'1개'}, {n:'마요네즈',a:'2큰술'},
+      {n:'김',a:'1장'}, {n:'간장',a:'1/2큰술'}, {n:'설탕',a:'1/2작은술'}
+    ],
+    steps:[
+      '스팸을 깍둑 모양으로 썰어 팬에 노릇하게 구워요.',
+      '간장과 설탕을 넣고 30초만 졸여 스팸에 양념을 입혀요.',
+      '그릇에 밥을 담고 스팸과 달걀 프라이를 올려요.',
+      '마요네즈를 격자로 뿌리고 김을 잘게 찢어 올려요.',
+      '먹기 직전에 김과 함께 비벼요.'
+    ],
+    tip:'마요네즈에 간장 반 작은술을 섞으면 감칠맛이 확 올라가요.'
+  },
+  {
+    id:'daepae-bean-sprout', name:'대패삼겹숙주볶음', emoji:'🥘', cat:'볶음', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'대패삼겹살',a:'200g'}, {n:'숙주나물',a:'1봉'}, {n:'양파',a:'1/2개'}, {n:'대파',a:'1/2대'},
+      {n:'간장',a:'1큰술'}, {n:'굴소스',a:'1/2큰술'}, {n:'마늘',a:'1작은술'}, {n:'후추',a:'약간',b:1}
+    ],
+    steps:[
+      '숙주는 씻어 물기를 빼고 양파와 대파는 채 썰어요.',
+      '달군 팬에 대패삼겹살을 펼쳐 센 불에 볶아 기름을 살짝 빼요.',
+      '양파, 마늘, 대파를 넣고 1분 볶아요.',
+      '간장과 굴소스를 넣어 고루 섞은 뒤 숙주를 넣어 30초만 볶고 불을 꺼요.',
+      '후추를 뿌려 마무리해요.'
+    ],
+    tip:'숙주는 마지막에 짧게 볶아야 아삭한 식감이 살아요.'
+  },
+  {
+    id:'fishcake', name:'어묵볶음', emoji:'🍢', cat:'반찬', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'어묵',a:'3장'}, {n:'양파',a:'1/2개'}, {n:'대파',a:'1/2대'}, {n:'간장',a:'1큰술'},
+      {n:'설탕',a:'1/2큰술'}, {n:'고춧가루',a:'1작은술'}, {n:'마늘',a:'1작은술'},
+      {n:'물엿',a:'1/2큰술',o:1}
+    ],
+    steps:[
+      '어묵은 끓는 물에 30초 데쳐 기름기를 빼고 한입 크기로 썰어요.',
+      '팬에 기름을 두르고 양파와 마늘을 볶아요.',
+      '어묵을 넣고 간장, 설탕, 고춧가루를 넣어 3분 볶아요.',
+      '물 3큰술을 넣고 국물이 살짝 졸 때까지 볶아요.',
+      '대파와 물엿을 넣고 30초 더 볶아요.'
+    ],
+    tip:'어묵을 데치면 잡내와 기름기가 빠져 양념이 잘 배어요.'
+  },
+  {
+    id:'potato-stir', name:'감자채볶음', emoji:'🥔', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'감자',a:'2개'}, {n:'당근',a:'1/2개'}, {n:'양파',a:'1/2개'}, {n:'마늘',a:'1작은술'},
+      {n:'소금',a:'약간',b:1}, {n:'후추',a:'약간',b:1}, {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '감자와 당근을 얇게 채 썰고 감자는 물에 5분 담가 전분을 빼요.',
+      '팬에 기름을 두르고 당근과 양파를 먼저 볶아요.',
+      '물기를 뺀 감자를 넣고 센 불에서 3~4분 볶아요.',
+      '소금과 후추로 간하고 마늘을 넣어 30초 더 볶아요.',
+      '감자가 투명해지면 불을 꺼요.'
+    ],
+    tip:'감자를 물에 담갔다 볶으면 팬에 붙지 않고 아삭해요.'
+  },
+  {
+    id:'bean-sprout', name:'콩나물무침', emoji:'🥗', cat:'반찬', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'콩나물',a:'200g'}, {n:'대파',a:'1/2대'}, {n:'마늘',a:'1작은술'},
+      {n:'참기름',a:'1큰술'}, {n:'고춧가루',a:'1작은술'}, {n:'소금',a:'약간',b:1}
+    ],
+    steps:[
+      '콩나물을 씻어 냄비에 넣고 물 1/2컵을 부어 뚜껑을 덮고 3분 찔 듯이 삶아요.',
+      '삶은 콩나물을 찬물에 헹궈 물기를 꽉 짜요.',
+      '볼에 콩나물, 다진 대파, 마늘, 참기름, 고춧가루, 소금을 넣어요.',
+      '손으로 살살 무쳐 간이 고루 배게 해요.',
+      '그릇에 담고 한 번 더 버무려요.'
+    ],
+    tip:'콩나물 삶은 물은 버리지 말고 국물 요리에 쓰면 시원한 맛이 나요.'
+  },
+  {
+    id:'tuna-kimchi', name:'참치김치찌개', emoji:'🍲', cat:'국·찌개', spicy:2, time:15, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'김치',a:'1컵'}, {n:'참치캔',a:'1개'}, {n:'두부',a:'1/2모'}, {n:'대파',a:'1대'},
+      {n:'양파',a:'1/2개'}, {n:'고춧가루',a:'1작은술'}, {n:'마늘',a:'1작은술'}
+    ],
+    steps:[
+      '김치를 한입 크기로 썰어 냄비에 기름과 함께 볶아요.',
+      '김치가 투명해지면 참치캔의 기름과 함께 넣고 1분 볶아요.',
+      '물 500ml를 부어 끓어오르면 두부와 양파를 넣어요.',
+      '고춧가루와 마늘을 넣고 5분 끓여요.',
+      '대파를 넣고 한소끔 끓여 마무리해요.'
+    ],
+    tip:'참치캔 기름을 함께 볶으면 국물이 더 고소해져요.'
+  },
+  {
+    id:'jeyuk', name:'제육볶음', emoji:'🥘', cat:'볶음', spicy:2, time:25, level:'보통', serve:'3인분',
+    ing:[
+      {n:'돼지고기',a:'300g'}, {n:'양파',a:'1개'}, {n:'대파',a:'1대'}, {n:'고추장',a:'1.5큰술'},
+      {n:'고춧가루',a:'1큰술'}, {n:'간장',a:'1큰술'}, {n:'설탕',a:'1큰술'},
+      {n:'마늘',a:'1큰술'}, {n:'참기름',a:'1큰술'},
+      {n:'깻잎',a:'5장',o:1}, {n:'상추',a:'4장',o:1}
+    ],
+    steps:[
+      '고추장, 고춧가루, 간장, 설탕, 마늘, 참기름 반을 섞어 양념장을 만들어요.',
+      '돼지고기에 양념장을 넣고 10분 이상 재워요.',
+      '센 불로 달군 팬에 고기를 넣고 펼쳐 볶아요.',
+      '고기가 반쯤 익으면 양파와 대파를 넣고 3분 볶아요.',
+      '남은 참기름을 둘러 마무리하고 상추나 깻잎에 싸 먹어요.'
+    ],
+    tip:'고기를 10분만 재워도 양념이 깊게 배고, 하루 재우면 더 맛있어요.'
+  },
+  {
+    id:'dakgalbi', name:'닭갈비', emoji:'🍗', cat:'볶음', spicy:2, time:30, level:'보통', serve:'3인분',
+    ing:[
+      {n:'닭다리살',a:'400g'}, {n:'양배추',a:'1/4통'}, {n:'고구마',a:'1개'}, {n:'떡볶이떡',a:'1컵'},
+      {n:'양파',a:'1개'}, {n:'대파',a:'1대'}, {n:'고추장',a:'2큰술'}, {n:'고춧가루',a:'1큰술'},
+      {n:'간장',a:'1큰술'}, {n:'마늘',a:'1큰술'}, {n:'설탕',a:'1큰술'}
+    ],
+    steps:[
+      '닭다리살은 한입 크기로 썰고 고구마, 양배추, 양파는 도톰하게 썰어요.',
+      '고추장, 고춧가루, 간장, 설탕, 마늘을 섞어 양념장을 만들어요.',
+      '팬에 닭고기를 넣고 양념장을 넣어 5분 볶아요.',
+      '고구마와 떡을 넣고 물 1/2컵을 부어 뚜껑을 덮고 10분 익혀요.',
+      '양배추, 양파, 대파를 넣고 국물이 졸 때까지 볶아요.'
+    ],
+    tip:'고구마가 익지 않았으면 물을 조금 더 넣고 뚜껑을 덮어 익혀요.'
+  },
+  {
+    id:'tteokbokki', name:'떡볶이', emoji:'🌶️', cat:'분식', spicy:2, time:15, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'떡볶이떡',a:'2컵'}, {n:'어묵',a:'2장'}, {n:'고추장',a:'2큰술'}, {n:'고춧가루',a:'1큰술'},
+      {n:'설탕',a:'1큰술'}, {n:'대파',a:'1대'}, {n:'양파',a:'1/2개'}, {n:'간장',a:'1/2큰술'}
+    ],
+    steps:[
+      '떡은 미지근한 물에 5분 담가 부드럽게 해요.',
+      '냄비에 물 400ml와 고추장, 고춧가루, 설탕, 간장을 넣고 끓여요.',
+      '양념이 풀어지면 떡을 넣고 중불에서 5분 끓여요.',
+      '어묵과 양파를 넣고 국물이 걸쭉해질 때까지 저어요.',
+      '대파를 넣고 1분 더 끓여 마무리해요.'
+    ],
+    tip:'설탕 대신 물엿을 넣으면 윤기가 나고 덜 달아요.'
+  },
+  {
+    id:'squid', name:'오징어볶음', emoji:'🦑', cat:'볶음', spicy:2, time:20, level:'보통', serve:'2인분',
+    ing:[
+      {n:'오징어',a:'1마리'}, {n:'양파',a:'1개'}, {n:'당근',a:'1/2개'}, {n:'대파',a:'1대'},
+      {n:'고추장',a:'1큰술'}, {n:'고춧가루',a:'1.5큰술'}, {n:'마늘',a:'1큰술'},
+      {n:'설탕',a:'1큰술'}, {n:'간장',a:'1큰술'}, {n:'참기름',a:'1큰술'}
+    ],
+    steps:[
+      '오징어는 내장과 뼈를 빼고 격자로 칼집을 넣어 한입 크기로 썰어요.',
+      '고추장, 고춧가루, 간장, 설탕, 마늘, 참기름 반을 섞어 양념장을 만들어요.',
+      '팬에 양파와 당근을 볶다가 오징어를 넣고 센 불에서 2분 볶아요.',
+      '양념장을 넣고 2분 더 볶아요.',
+      '대파와 남은 참기름을 넣고 불을 꺼요.'
+    ],
+    tip:'오징어는 센 불에서 짧게 볶아야 질기지 않아요.'
+  },
+  {
+    id:'curry', name:'카레라이스', emoji:'🍛', cat:'밥·면', spicy:0, time:25, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'카레가루',a:'2큰술'}, {n:'감자',a:'1개'}, {n:'당근',a:'1/2개'}, {n:'양파',a:'1개'},
+      {n:'돼지고기',a:'150g'}, {n:'밥',a:'2공기'}, {n:'물',a:'500ml',b:1}
+    ],
+    steps:[
+      '감자, 당근, 양파를 1.5cm 크기로 깍둑 썰어요.',
+      '냄비에 기름을 두르고 돼지고기를 볶다가 채소를 넣어 3분 볶아요.',
+      '물 500ml를 붓고 끓어오르면 약불에서 10분 끓여요.',
+      '불을 줄이고 카레가루를 풀어 3분 끓여 농도를 맞춰요.',
+      '밥 위에 카레를 끼얹어요.'
+    ],
+    tip:'카레가루를 넣은 뒤에는 눌어붙지 않게 계속 저어 주세요.'
+  },
+  {
+    id:'mushroom-perilla', name:'버섯들깨탕', emoji:'🍲', cat:'국·찌개', spicy:0, time:20, level:'보통', serve:'2인분',
+    ing:[
+      {n:'새송이버섯',a:'2개'}, {n:'표고버섯',a:'3개'}, {n:'느타리버섯',a:'1줌'}, {n:'팽이버섯',a:'1봉'},
+      {n:'들깨가루',a:'3큰술'}, {n:'대파',a:'1대'}, {n:'마늘',a:'1작은술'},
+      {n:'간장',a:'1큰술'}, {n:'참기름',a:'1큰술'}
+    ],
+    steps:[
+      '버섯은 먹기 좋게 찢거나 썰고 팽이버섯은 밑동을 잘라요.',
+      '냄비에 참기름과 마늘을 넣고 버섯을 3분 볶아요.',
+      '물 800ml를 붓고 끓어오르면 중불에서 8분 끓여요.',
+      '들깨가루를 물에 풀어 넣고 5분 더 끓여요.',
+      '간장으로 간하고 대파를 넣어 마무리해요.'
+    ],
+    tip:'들깨가루는 체에 걸러 넣으면 국물이 매끈해요.'
+  },
+  {
+    id:'spinach', name:'시금치나물', emoji:'🥬', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'시금치',a:'1단'}, {n:'마늘',a:'1작은술'}, {n:'참기름',a:'1큰술'},
+      {n:'대파',a:'1/2대'}, {n:'소금',a:'약간',b:1}
+    ],
+    steps:[
+      '시금치는 뿌리를 정리하고 흐르는 물에 씻어요.',
+      '끓는 물에 소금을 넣고 시금치를 30초만 데쳐요.',
+      '바로 찬물에 헹궈 물기를 꽉 짜요.',
+      '다진 대파, 마늘, 참기름, 소금을 넣고 조물조물 무쳐요.',
+      '먹기 좋게 담아요.'
+    ],
+    tip:'데치는 시간이 길면 물러져요. 30초를 넘기지 마세요.'
+  },
+  {
+    id:'miyeokguk', name:'미역국', emoji:'🍲', cat:'국·찌개', spicy:0, time:25, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'미역',a:'20g'}, {n:'소고기',a:'100g'}, {n:'간장',a:'1큰술'}, {n:'마늘',a:'1작은술'},
+      {n:'참기름',a:'1큰술'}
+    ],
+    steps:[
+      '미역을 물에 10분 불려 여러 번 씻은 뒤 먹기 좋게 썰어요.',
+      '냄비에 참기름을 두르고 소고기와 미역을 3분 볶아요.',
+      '물 800ml를 붓고 끓어오르면 중불에서 15분 끓여요.',
+      '간장과 마늘로 간을 맞춰요.',
+      '그릇에 담아요.'
+    ],
+    tip:'미역을 충분히 볶아야 국물이 진하고 비린내가 나지 않아요.'
+  },
+  {
+    id:'buchu-jeon', name:'부추전', emoji:'🥞', cat:'반찬', spicy:0, time:15, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'부추',a:'1줌'}, {n:'부침가루',a:'1컵'}, {n:'달걀',a:'1개'}, {n:'간장',a:'1큰술'},
+      {n:'새우',a:'50g',o:1}, {n:'식용유',a:'넉넉히',b:1}, {n:'물',a:'3/4컵',b:1}
+    ],
+    steps:[
+      '부추는 4cm 길이로 썰고 새우는 잘게 다져요.',
+      '부침가루 1컵에 물 3/4컵과 달걀을 넣어 반죽해요.',
+      '부추와 새우를 반죽에 넣고 가볍게 섞어요.',
+      '기름을 넉넉히 두른 팬에 반죽을 펴고 중불에서 3분 부쳐요.',
+      '뒤집어 2분 더 부치고 간장 양념장에 찍어 먹어요.'
+    ],
+    tip:'반죽은 살짝 되직하게 만들어야 부추가 잘 붙어요.'
+  },
+  {
+    id:'zucchini-jeon', name:'애호박전', emoji:'🥒', cat:'반찬', spicy:0, time:15, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'애호박',a:'1개'}, {n:'부침가루',a:'1/2컵'}, {n:'달걀',a:'1개'},
+      {n:'소금',a:'약간',b:1}, {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '애호박은 0.5cm 두께로 썰어 소금을 살짝 뿌려요.',
+      '부침가루를 얇게 묻히고 달걀물에 담갔다 꺼내요.',
+      '기름을 두른 팬에 올려 중불에서 2분 부쳐요.',
+      '뒤집어 노릇하게 2분 더 부쳐요.',
+      '키친타월에 올려 기름을 빼고 담아요.'
+    ],
+    tip:'부침가루 대신 밀가루를 써도 되고, 달걀물에 소금을 넣으면 간이 고루 배요.'
+  },
+  {
+    id:'bibim-guksu', name:'비빔국수', emoji:'🍜', cat:'밥·면', spicy:2, time:15, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'소면',a:'100g'}, {n:'고추장',a:'1.5큰술'}, {n:'고춧가루',a:'1큰술'}, {n:'설탕',a:'1큰술'},
+      {n:'식초',a:'1큰술'}, {n:'참기름',a:'1큰술'}, {n:'오이',a:'1/2개'}, {n:'달걀',a:'1개'},
+      {n:'김',a:'1장'}, {n:'마늘',a:'1작은술'}
+    ],
+    steps:[
+      '볼에 고추장, 고춧가루, 설탕, 식초, 참기름, 마늘을 넣고 섞어 양념장을 만들어요.',
+      '끓는 물에 소면을 3분 30초 삶아 찬물에 비벼 헹궈요.',
+      '물기를 꽉 짠 국수를 양념장에 넣고 조물조물 비벼요.',
+      '오이는 채 썰고 달걀은 삶아 반으로 갈라요.',
+      '그릇에 담고 오이, 달걀, 김을 올려요.'
+    ],
+    tip:'양념장은 국수를 넣기 전에 10분 두면 맛이 어우러져요.'
+  },
+  {
+    id:'janchi-guksu', name:'잔치국수', emoji:'🍜', cat:'밥·면', spicy:0, time:20, level:'보통', serve:'2인분',
+    ing:[
+      {n:'소면',a:'150g'}, {n:'멸치',a:'8마리'}, {n:'다시마',a:'1장'}, {n:'간장',a:'1큰술'},
+      {n:'애호박',a:'1/3개'}, {n:'달걀',a:'1개'}, {n:'대파',a:'1/2대'}, {n:'김',a:'1장'},
+      {n:'마늘',a:'1작은술'}
+    ],
+    steps:[
+      '물 800ml에 멸치와 다시마를 넣고 10분 끓여 육수를 내요.',
+      '간장과 마늘로 간을 맞추고 대파를 넣어 한소끔 끓여요.',
+      '애호박은 채 썰어 볶고, 달걀은 지단으로 부쳐 채 썰어요.',
+      '소면을 2분 30초 삶아 찬물에 헹구고 물기를 빼요.',
+      '그릇에 국수를 담고 뜨거운 육수를 부은 뒤 고명을 올려요.'
+    ],
+    tip:'육수 간을 약하게 하고 국수 위에 간장을 조금 더 두면 취향대로 먹을 수 있어요.'
+  },
+  {
+    id:'fried-udon', name:'볶음우동', emoji:'🍜', cat:'볶음', spicy:1, time:15, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'우동면',a:'2인분'}, {n:'양배추',a:'1/4통'}, {n:'돼지고기',a:'100g'}, {n:'양파',a:'1/2개'},
+      {n:'당근',a:'1/3개'}, {n:'간장',a:'1큰술'}, {n:'굴소스',a:'1큰술'}, {n:'대파',a:'1/2대'}
+    ],
+    steps:[
+      '우동면은 끓는 물에 1분 데쳐 풀어 놓아요.',
+      '양배추, 양파, 당근은 채 썰고 돼지고기는 한입 크기로 썰어요.',
+      '팬에 기름을 두르고 돼지고기를 볶다가 채소를 넣어 2분 볶아요.',
+      '우동면과 간장, 굴소스를 넣고 센 불에서 2분 볶아요.',
+      '대파와 후추를 넣고 마무리해요.'
+    ],
+    tip:'면은 데친 뒤 물기를 빼야 볶을 때 질척해지지 않아요.'
+  },
+  {
+    id:'rabokki', name:'라볶이', emoji:'🍜', cat:'분식', spicy:2, time:15, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'라면',a:'1봉'}, {n:'떡볶이떡',a:'1컵'}, {n:'어묵',a:'1장'}, {n:'고추장',a:'1.5큰술'},
+      {n:'고춧가루',a:'1큰술'}, {n:'설탕',a:'1큰술'}, {n:'대파',a:'1대'}, {n:'양파',a:'1/2개'}
+    ],
+    steps:[
+      '냄비에 물 500ml와 고추장, 고춧가루, 설탕을 넣고 끓여요.',
+      '떡과 어묵을 넣고 5분 끓여요.',
+      '라면 사리를 넣고 2분 끓여요.',
+      '라면 스프 반 봉과 양파, 대파를 넣어요.',
+      '국물이 살짝 졸면 불을 꺼요.'
+    ],
+    tip:'라면 스프는 반만 넣어야 짜지 않고 떡볶이 양념 맛이 살아요.'
+  },
+  {
+    id:'kimchi-jjigae', name:'김치찌개', emoji:'🍲', cat:'국·찌개', spicy:2, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'김치',a:'1.5컵'}, {n:'돼지고기',a:'150g'}, {n:'두부',a:'1/2모'}, {n:'양파',a:'1/2개'},
+      {n:'대파',a:'1대'}, {n:'고춧가루',a:'1작은술'}, {n:'마늘',a:'1작은술'}
+    ],
+    steps:[
+      '김치는 한입 크기로 썰고 돼지고기는 도톰하게 썰어요.',
+      '냄비에 기름을 두르고 돼지고기를 볶아 겉면을 익혀요.',
+      '김치를 넣고 3분 볶다가 물 600ml를 부어요.',
+      '끓어오르면 양파, 마늘, 고춧가루를 넣고 중불에서 10분 끓여요.',
+      '두부와 대파를 넣고 3분 더 끓여요.'
+    ],
+    tip:'김치가 익은 것이면 설탕 반 작은술을 넣어 신맛을 잡아 주세요.'
+  },
+  {
+    id:'gyeranjjim', name:'계란찜', emoji:'🍲', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'달걀',a:'3개'}, {n:'대파',a:'1/2대'}, {n:'참기름',a:'1작은술'},
+      {n:'당근',a:'1/4개',o:1}, {n:'소금',a:'약간',b:1}, {n:'물',a:'1/2컵',b:1}
+    ],
+    steps:[
+      '달걀 3개를 풀고 물 1/2컵과 소금을 넣어 섞어요.',
+      '체에 걸러 알끈을 빼면 더 부드러워요.',
+      '뚝배기나 두꺼운 팬에 참기름을 두르고 달걀물을 부어요.',
+      '약한 불에서 젓가락으로 저으며 5분 익혀요.',
+      '뚜껑을 덮고 2분 더 두었다가 대파와 당근을 뿌려요.'
+    ],
+    tip:'약한 불에서 천천히 익혀야 구멍 없이 부드러워요.'
+  },
+  {
+    id:'potato-jorim', name:'감자조림', emoji:'🥔', cat:'반찬', spicy:0, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'감자',a:'3개'}, {n:'간장',a:'2큰술'}, {n:'설탕',a:'1큰술'}, {n:'마늘',a:'1작은술'},
+      {n:'대파',a:'1/2대'}, {n:'참기름',a:'1작은술'}
+    ],
+    steps:[
+      '감자는 껍질을 벗겨 한입 크기로 썰고 물에 5분 담가요.',
+      '냄비에 간장, 설탕, 물 1컵, 마늘을 넣고 끓여요.',
+      '감자를 넣고 중불에서 10분 조려요.',
+      '국물이 반으로 줄면 약불로 줄여 감자에 양념을 끼얹어요.',
+      '대파와 참기름을 넣고 마무리해요.'
+    ],
+    tip:'감자 가장자리를 살짝 다듬으면 부서지지 않고 모양이 예뻐요.'
+  },
+  {
+    id:'tofu-jorim', name:'두부조림', emoji:'🍲', cat:'반찬', spicy:1, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'두부',a:'1모'}, {n:'간장',a:'2큰술'}, {n:'고춧가루',a:'1큰술'}, {n:'대파',a:'1대'},
+      {n:'마늘',a:'1작은술'}, {n:'참기름',a:'1큰술'}, {n:'양파',a:'1/2개',o:1}
+    ],
+    steps:[
+      '두부를 1cm 두께로 썰어 물기를 빼요.',
+      '간장, 고춧가루, 마늘, 참기름 반, 물 3큰술을 섞어 양념장을 만들어요.',
+      '팬에 기름을 두르고 두부를 앞뒤로 노릇하게 부쳐요.',
+      '양념장을 두부 위에 끼얹고 양파를 넣어 약불에서 5분 조려요.',
+      '대파를 올리고 남은 참기름을 둘러 마무리해요.'
+    ],
+    tip:'두부를 뒤집을 때 누르지 말고 살짝 들어 뒤집어야 부서지지 않아요.'
+  },
+  {
+    id:'japchae', name:'잡채', emoji:'🍜', cat:'반찬', spicy:0, time:40, level:'보통', serve:'4인분',
+    ing:[
+      {n:'당면',a:'100g'}, {n:'돼지고기',a:'150g'}, {n:'양파',a:'1개'}, {n:'당근',a:'1/2개'},
+      {n:'시금치',a:'1/2단'}, {n:'표고버섯',a:'3개'}, {n:'간장',a:'3큰술'}, {n:'설탕',a:'2큰술'},
+      {n:'참기름',a:'1큰술'}, {n:'마늘',a:'1큰술'}
+    ],
+    steps:[
+      '당면을 미지근한 물에 30분 불려요.',
+      '양파, 당근, 표고버섯은 채 썰고 시금치는 데쳐요.',
+      '돼지고기는 간장 1큰술, 설탕 반 큰술로 볶아요.',
+      '채소를 각각 볶고 당면은 간장 2큰술, 설탕 1.5큰술, 참기름으로 볶아요.',
+      '모든 재료를 큰 볼에 넣고 남은 양념과 함께 무쳐요.'
+    ],
+    tip:'당면은 삶지 않고 불려 볶으면 질깃하지 않고 탱글해요.'
+  },
+  {
+    id:'mandu-guk', name:'만두국', emoji:'🥟', cat:'국·찌개', spicy:0, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'만두',a:'8개'}, {n:'달걀',a:'1개'}, {n:'대파',a:'1/2대'}, {n:'멸치',a:'5마리'},
+      {n:'다시마',a:'1장'}, {n:'간장',a:'1큰술'}, {n:'김',a:'1장',o:1}
+    ],
+    steps:[
+      '물 700ml에 멸치와 다시마를 넣고 8분 끓여 육수를 내요.',
+      '간장으로 간을 맞추고 만두를 넣어 5분 삶아요.',
+      '달걀을 지단으로 부쳐 채 썰어요.',
+      '그릇에 담고 대파와 지단, 김을 올려요.',
+      '후추를 뿌려 마무리해요.'
+    ],
+    tip:'만두가 떠오르면 다 익은 거예요. 터지지 않게 약불로 끓여요.'
+  },
+  {
+    id:'tomato-egg', name:'토마토달걀볶음', emoji:'🍅', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'토마토',a:'2개'}, {n:'달걀',a:'3개'}, {n:'대파',a:'1/2대'}, {n:'설탕',a:'1작은술'},
+      {n:'소금',a:'약간',b:1}
+    ],
+    steps:[
+      '토마토는 웨지 모양으로 6등분해요.',
+      '달걀에 소금을 넣고 풀어요.',
+      '뜨거운 팬에 기름을 두르고 달걀을 부어 반쯤 익으면 그릇에 덜어요.',
+      '같은 팬에 토마토를 넣고 2분 볶다가 설탕과 소금을 넣어요.',
+      '달걀을 다시 넣고 대파를 넣어 가볍게 섞어요.'
+    ],
+    tip:'토마토에 설탕 1작은술을 넣으면 신맛이 줄고 국물이 맛있어요.'
+  },
+  {
+    id:'spam-kimchi', name:'스팸김치볶음', emoji:'🥘', cat:'반찬', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'김치',a:'1컵'}, {n:'스팸',a:'1/2캔'}, {n:'양파',a:'1/2개'}, {n:'설탕',a:'1/2작은술'},
+      {n:'참기름',a:'1작은술'}, {n:'대파',a:'1/2대'}
+    ],
+    steps:[
+      '김치는 잘게 썰고 스팸은 도톰하게 썰어요.',
+      '팬에 스팸을 노릇하게 구워 접시에 덜어요.',
+      '같은 팬에 김치와 양파를 넣고 3분 볶아요.',
+      '설탕과 스팸을 넣어 1분 더 볶아요.',
+      '대파와 참기름을 넣고 불을 꺼요.'
+    ],
+    tip:'설탕 대신 김치 국물 2큰술을 넣으면 깊은 맛이 나요.'
+  },
+  {
+    id:'cabbage-salad', name:'양배추샐러드', emoji:'🥗', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'양배추',a:'1/4통'}, {n:'당근',a:'1/4개'}, {n:'마요네즈',a:'3큰술'}, {n:'식초',a:'1큰술'},
+      {n:'설탕',a:'1큰술'}, {n:'우유',a:'1큰술',o:1}
+    ],
+    steps:[
+      '양배추는 최대한 얇게 채 썰고 당근은 채 썰어요.',
+      '찬물에 5분 담갔다가 꺼내 물기를 빼요.',
+      '볼에 마요네즈, 식초, 설탕, 우유를 섞어 드레싱을 만들어요.',
+      '채소에 드레싱을 넣고 가볍게 버무려요.',
+      '냉장고에서 10분 두면 더 맛있어요.'
+    ],
+    tip:'얇게 채 썰고 찬물에 담그면 아삭함이 오래가요.'
+  },
+  {
+    id:'cheese-toast', name:'치즈계란토스트', emoji:'🥪', cat:'간식', spicy:0, time:12, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'식빵',a:'2장'}, {n:'달걀',a:'1개'}, {n:'치즈',a:'1장'}, {n:'버터',a:'1큰술'},
+      {n:'우유',a:'2큰술',o:1}, {n:'케첩',a:'약간',o:1}
+    ],
+    steps:[
+      '달걀을 우유와 함께 풀어요.',
+      '팬에 버터를 녹이고 식빵을 앞뒤로 노릇하게 구워요.',
+      '같은 팬에 달걀물을 부어 반숙으로 익혀요.',
+      '식빵 위에 달걀과 치즈를 올리고 다른 식빵을 덮어요.',
+      '약한 불에서 1분 눌러 치즈를 녹이고 반으로 잘라요.'
+    ],
+    tip:'치즈가 녹을 정도로만 눌러 주세요. 오래 두면 식빵이 눅눅해져요.'
+  },
+  {
+    id:'sujebi', name:'수제비', emoji:'🍲', cat:'국·찌개', spicy:0, time:30, level:'보통', serve:'2인분',
+    ing:[
+      {n:'밀가루',a:'1.5컵'}, {n:'감자',a:'1개'}, {n:'애호박',a:'1/3개'}, {n:'대파',a:'1대'},
+      {n:'멸치',a:'5마리'}, {n:'다시마',a:'1장'}, {n:'마늘',a:'1작은술'}, {n:'간장',a:'1큰술'},
+      {n:'소금',a:'약간',b:1}, {n:'물',a:'2/3컵',b:1}
+    ],
+    steps:[
+      '밀가루에 물 2/3컵과 소금을 넣고 5분 치대어 20분 쉬게 해요.',
+      '물 800ml에 멸치와 다시마를 넣고 8분 끓여 육수를 내요.',
+      '감자를 썰어 넣고 5분 끓인 뒤 간장과 마늘로 간을 해요.',
+      '반죽을 얇게 떼어 넣고 3분 끓여요.',
+      '애호박과 대파를 넣고 3분 더 끓여요.'
+    ],
+    tip:'반죽을 넣은 뒤에는 저어 주지 말고 끓어오르게 두어야 국물이 맑아요.'
+  },
+  {
+    id:'gochujang-bulgogi', name:'고추장불고기', emoji:'🍖', cat:'볶음', spicy:1, time:25, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'소고기',a:'300g'}, {n:'양파',a:'1개'}, {n:'대파',a:'1대'}, {n:'고추장',a:'1큰술'},
+      {n:'간장',a:'1큰술'}, {n:'설탕',a:'1큰술'}, {n:'마늘',a:'1큰술'}, {n:'참기름',a:'1큰술'},
+      {n:'깻잎',a:'5장',o:1}, {n:'생강',a:'1작은술',o:1}
+    ],
+    steps:[
+      '고추장, 간장, 설탕, 마늘, 참기름을 섞어 양념장을 만들어요.',
+      '소고기에 양념장을 넣고 15분 재워요.',
+      '센 불로 달군 팬에 고기를 펼쳐 볶아요.',
+      '양파와 대파를 넣고 2분 더 볶아요.',
+      '그릇에 담고 참깨를 뿌려요.'
+    ],
+    tip:'소고기는 핏물을 키친타월로 닦아 내면 잡내가 줄어요.'
+  },
+  {
+    id:'oi-muchim', name:'오이무침', emoji:'🥒', cat:'반찬', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'오이',a:'2개'}, {n:'고춧가루',a:'1큰술'}, {n:'마늘',a:'1작은술'}, {n:'설탕',a:'1작은술'},
+      {n:'식초',a:'1큰술'}, {n:'참기름',a:'1작은술'}, {n:'대파',a:'1/2대',o:1}
+    ],
+    steps:[
+      '오이는 반으로 갈라 어슷하게 썰어 소금에 10분 절여요.',
+      '절인 오이는 물기를 꽉 짜요.',
+      '볼에 고춧가루, 마늘, 설탕, 식초, 참기름을 넣고 섞어요.',
+      '오이를 넣고 조물조물 무쳐요.',
+      '대파를 넣고 살짝 버무려요.'
+    ],
+    tip:'오이를 절이면 물이 빠져 양념이 묽어지지 않아요.'
+  }
+  ,
+  {
+    id:'eggplant-stir', name:'가지볶음', emoji:'🍆', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'가지',a:'2개'}, {n:'양파',a:'1/2개'}, {n:'대파',a:'1/2대'}, {n:'간장',a:'1.5큰술'},
+      {n:'마늘',a:'1작은술'}, {n:'참기름',a:'1작은술'}, {n:'들기름',a:'1큰술',o:1},
+      {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '가지는 반으로 갈라 어슷하게 썰고 양파와 대파는 채 썰어요.',
+      '팬에 기름을 두르고 가지를 3분 볶아요.',
+      '양파와 마늘을 넣고 1분 더 볶아요.',
+      '간장과 물 3큰술을 넣고 국물이 스며들게 2분 볶아요.',
+      '대파와 참기름을 넣고 마무리해요.'
+    ],
+    tip:'가지는 소금물에 5분 담갔다 볶으면 기름을 덜 먹고 부드러워져요.'
+  },
+  {
+    id:'cabbage-geotjeori', name:'배추겉절이', emoji:'🥬', cat:'반찬', spicy:2, time:20, level:'쉬움', serve:'3인분',
+    ing:[
+      {n:'배추',a:'1/4통'}, {n:'고춧가루',a:'3큰술'}, {n:'쪽파',a:'5대'}, {n:'마늘',a:'1큰술'},
+      {n:'설탕',a:'1큰술'}, {n:'참기름',a:'1큰술'}, {n:'홍고추',a:'1개',o:1}, {n:'소금',a:'약간',b:1}
+    ],
+    steps:[
+      '배추는 한입 크기로 썰어 소금에 10분 절여요.',
+      '절인 배추는 물기를 살짝 짜요.',
+      '고춧가루, 마늘, 설탕, 참기름을 섞어 양념을 만들어요.',
+      '배추와 쪽파를 넣고 버무려요.',
+      '홍고추를 어슷하게 썰어 올려요.'
+    ],
+    tip:'겉절이는 하루 안에 먹어야 아삭하고, 남으면 볶음밥에 넣어도 좋아요.'
+  },
+  {
+    id:'mu-saengchae', name:'무생채', emoji:'🥗', cat:'반찬', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'무',a:'1/4개'}, {n:'고춧가루',a:'1.5큰술'}, {n:'설탕',a:'1큰술'}, {n:'식초',a:'1큰술'},
+      {n:'마늘',a:'1작은술'}, {n:'쪽파',a:'3대'}, {n:'참기름',a:'1작은술'}, {n:'소금',a:'약간',b:1}
+    ],
+    steps:[
+      '무는 얇게 채 썰어 소금에 10분 절여요.',
+      '절인 무의 물기를 가볍게 짜요.',
+      '고춧가루, 설탕, 식초, 마늘, 참기름을 섞어요.',
+      '무와 쪽파를 넣고 버무려요.',
+      '냉장고에 10분 두면 맛이 어우러져요.'
+    ],
+    tip:'설탕과 식초를 1:1로 넣으면 새콤달콤한 무생채가 돼요.'
+  },
+  {
+    id:'sausage-veg', name:'소시지야채볶음', emoji:'🌭', cat:'반찬', spicy:1, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'소시지',a:'4개'}, {n:'파프리카',a:'1/2개'}, {n:'양파',a:'1/2개'}, {n:'케첩',a:'2큰술'},
+      {n:'설탕',a:'1작은술'}, {n:'간장',a:'1/2큰술'}, {n:'베이컨',a:'2장',o:1},
+      {n:'식용유',a:'약간',b:1}, {n:'후추',a:'약간',b:1}
+    ],
+    steps:[
+      '소시지는 어슷하게 썰고 파프리카와 양파는 채 썰어요.',
+      '팬에 기름을 두르고 소시지를 2분 볶아요.',
+      '양파와 파프리카를 넣고 2분 더 볶아요.',
+      '케첩, 설탕, 간장을 넣고 1분 볶아요.',
+      '후추를 뿌려 마무리해요.'
+    ],
+    tip:'케첩에 간장 반 큰술을 넣으면 단맛만 남지 않고 감칠맛이 생겨요.'
+  },
+  {
+    id:'ham-cheese-sandwich', name:'햄치즈샌드위치', emoji:'🥪', cat:'간식', spicy:0, time:10, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'식빵',a:'2장'}, {n:'햄',a:'2장'}, {n:'치즈',a:'1장'}, {n:'마요네즈',a:'1큰술'},
+      {n:'상추',a:'2장',o:1}, {n:'케첩',a:'약간',o:1}, {n:'버터',a:'1작은술',o:1}
+    ],
+    steps:[
+      '식빵을 팬에 살짝 구워요.',
+      '햄을 팬에 살짝 데워요.',
+      '식빵에 마요네즈를 바르고 상추, 햄, 치즈를 올려요.',
+      '다른 식빵을 덮고 살짝 눌러요.',
+      '반으로 잘라 담아요.'
+    ],
+    tip:'마요네즈를 식빵 안쪽에 바르면 내용물이 젖지 않아요.'
+  },
+  {
+    id:'chicken-steak', name:'닭가슴살스테이크', emoji:'🍗', cat:'볶음', spicy:0, time:20, level:'쉬움', serve:'1인분',
+    ing:[
+      {n:'닭가슴살',a:'2조각'}, {n:'마늘',a:'1큰술'}, {n:'간장',a:'1큰술'},
+      {n:'맛술',a:'1큰술',o:1}, {n:'생강',a:'1작은술',o:1},
+      {n:'후추',a:'약간',b:1}, {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '닭가슴살은 두께를 고르게 펴고 포크로 몇 번 찔러요.',
+      '간장, 마늘, 맛술, 생강, 후추를 섞어 10분 재워요.',
+      '팬에 기름을 두르고 중불에서 앞뒤로 4분씩 익혀요.',
+      '불을 끄고 3분 두어 속까지 익혀요.',
+      '먹기 좋게 썰어 담아요.'
+    ],
+    tip:'익힌 뒤 3분 쉬게 하면 육즙이 빠지지 않고 촉촉해요.'
+  },
+  {
+    id:'clam-kalguksu', name:'바지락칼국수', emoji:'🍜', cat:'밥·면', spicy:0, time:25, level:'보통', serve:'2인분',
+    ing:[
+      {n:'바지락',a:'300g'}, {n:'밀가루',a:'1.5컵'}, {n:'애호박',a:'1/3개'}, {n:'대파',a:'1대'},
+      {n:'마늘',a:'1작은술'}, {n:'간장',a:'1큰술'}, {n:'소금',a:'약간',b:1}, {n:'물',a:'800ml',b:1}
+    ],
+    steps:[
+      '바지락은 소금물에 30분 해감해요.',
+      '밀가루에 물 2/3컵과 소금을 넣고 반죽해 20분 쉬게 해요.',
+      '냄비에 물 800ml와 바지락을 넣고 입이 벌어질 때까지 끓여요.',
+      '반죽을 얇게 밀어 칼국수 모양으로 썰어 넣고 3분 끓여요.',
+      '애호박, 대파, 마늘, 간장으로 간해 한소끔 끓여요.'
+    ],
+    tip:'바지락은 해감을 충분히 해야 국물이 깔끔해요.'
+  },
+  {
+    id:'tteokguk', name:'떡국', emoji:'🍲', cat:'국·찌개', spicy:0, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'떡국떡',a:'2컵'}, {n:'달걀',a:'1개'}, {n:'대파',a:'1/2대'}, {n:'멸치',a:'5마리'},
+      {n:'다시마',a:'1장'}, {n:'간장',a:'1큰술'}, {n:'마늘',a:'1작은술'}, {n:'김',a:'1장',o:1}
+    ],
+    steps:[
+      '떡국떡은 물에 10분 담가 부드럽게 해요.',
+      '물 700ml에 멸치와 다시마를 넣고 8분 끓여 육수를 내요.',
+      '간장과 마늘로 간하고 떡을 넣어 5분 끓여요.',
+      '달걀은 지단으로 부쳐 채 썰어요.',
+      '대파와 지단, 김을 올려 마무리해요.'
+    ],
+    tip:'떡을 불려 넣으면 국물이 텁텁해지지 않아요.'
+  },
+  {
+    id:'broccoli-oyster', name:'브로콜리굴소스볶음', emoji:'🥦', cat:'반찬', spicy:0, time:10, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'브로콜리',a:'1개'}, {n:'마늘',a:'1큰술'}, {n:'굴소스',a:'1큰술'},
+      {n:'양파',a:'1/2개',o:1}, {n:'참기름',a:'1작은술',o:1}, {n:'식용유',a:'약간',b:1}
+    ],
+    steps:[
+      '브로콜리는 작게 나눠 끓는 물에 1분 데쳐요.',
+      '팬에 기름을 두르고 마늘을 볶아 향을 내요.',
+      '브로콜리와 양파를 넣고 2분 볶아요.',
+      '굴소스를 넣고 30초 더 볶아요.',
+      '참기름을 두르고 마무리해요.'
+    ],
+    tip:'데친 뒤 찬물에 헹구면 색이 선명하고 아삭해요.'
+  },
+  {
+    id:'veg-fritters', name:'야채튀김', emoji:'🍤', cat:'반찬', spicy:0, time:25, level:'보통', serve:'3인분',
+    ing:[
+      {n:'튀김가루',a:'1.5컵'}, {n:'감자',a:'1개'}, {n:'당근',a:'1/2개'}, {n:'양파',a:'1/2개'},
+      {n:'부추',a:'1/2줌'}, {n:'식용유',a:'넉넉히',b:1}
+    ],
+    steps:[
+      '튀김가루 1.5컵에 찬물 1컵을 넣어 살살 섞어요.',
+      '감자, 당근, 양파, 부추를 채 썰어 반죽에 넣어요.',
+      '기름을 170도로 달구어 반죽을 숟가락으로 떠 넣어요.',
+      '노릇해지면 뒤집어 2분 더 튀겨요.',
+      '키친타월에 올려 기름을 빼요.'
+    ],
+    tip:'반죽은 찬물로 만들고 재료를 넣은 뒤 오래 섞지 않아야 바삭해요.'
+  },
+  {
+    id:'tteokgalbi', name:'떡갈비', emoji:'🥩', cat:'반찬', spicy:0, time:20, level:'쉬움', serve:'2인분',
+    ing:[
+      {n:'다진 소고기',a:'200g'}, {n:'다진 돼지고기',a:'100g'}, {n:'양파',a:'1/2개'},
+      {n:'간장',a:'1.5큰술'}, {n:'설탕',a:'1큰술'}, {n:'마늘',a:'1큰술'}, {n:'참기름',a:'1큰술'},
+      {n:'맛술',a:'1큰술',o:1}, {n:'후추',a:'약간',b:1}
+    ],
+    steps:[
+      '양파는 곱게 다져 물기를 짜요.',
+      '다진 고기, 양파, 간장, 설탕, 마늘, 참기름, 후추를 치대어 반죽해요.',
+      '반죽을 동글납작하게 빚어요.',
+      '약한 불로 달군 팬에 올려 앞뒤로 4분씩 익혀요.',
+      '간장과 설탕을 1:1로 섞어 살짝 끼얹어 마무리해요.'
+    ],
+    tip:'반죽을 30분 냉장고에 두면 모양이 잡히고 잡내가 줄어요.'
+  }
+];
+
+/* 냉장고 요리 추천 — 앱 로직 */
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'fridgeCook.v1';
+  var SPICY = [
+    { cls: 'lv0', icon: '🥛', label: '순한맛' },
+    { cls: 'lv1', icon: '🌶️', label: '약간 매움' },
+    { cls: 'lv2', icon: '🌶️🌶️', label: '매움' }
+  ];
+  var FILTERS = [
+    { id: 'all', label: '전체' },
+    { id: '0', label: '🥛 안 매움' },
+    { id: '1', label: '🌶️ 약간 매움' },
+    { id: '2', label: '🌶️🌶️ 매움' }
+  ];
+
+  var state = {
+    sel: {},
+    custom: [],
+    filter: 'all',
+    sort: 'rate',
+    tab: 'veg',
+    q: '',
+    open: false,
+    showAll: false
+  };
+
+  var $ = function (s) { return document.querySelector(s); };
+  var elStatIng = $('#statIng');
+  var elStatDish = $('#statDish');
+  var elFridgeCount = $('#fridgeCount');
+  var elPicked = $('#pickedRow');
+  var elHint = $('#fridgeHint');
+  var elPicker = $('#picker');
+  var elToggle = $('#togglePick');
+  var elSearch = $('#searchInput');
+  var elAddBtn = $('#addBtn');
+  var elTabs = $('#catTabs');
+  var elGrid = $('#chipGrid');
+  var elList = $('#recipeList');
+  var elListTitle = $('#listTitle');
+  var elSortBtn = $('#sortBtn');
+  var elSortLabel = $('#sortLabel');
+  var elFilter = $('#filterbar');
+  var sheetWrap = $('#sheetWrap');
+  var sheetBody = $('#sheetBody');
+  var sheetClose = $('#sheetClose');
+  var backdrop = $('#backdrop');
+  var ytBtn = $('#ytBtn');
+  var toastEl = $('#toast');
+  var lastFocus = null;
+  var toastTimer = null;
+  var closeTimer = null;
+
+  /* ── 유틸 ─────────────────────────────────── */
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function selCount() { return Object.keys(state.sel).length; }
+  function has(n) { return state.sel[n] === true; }
+  function findRecipe(id) {
+    for (var i = 0; i < RECIPES.length; i++) { if (RECIPES[i].id === id) return RECIPES[i]; }
+    return null;
+  }
+  function catalogItems() {
+    var out = [];
+    for (var i = 0; i < CATS.length; i++) { out = out.concat(CATS[i].items); }
+    return out;
+  }
+  function catOf(n) {
+    for (var i = 0; i < CATS.length; i++) {
+      if (CATS[i].items.indexOf(n) !== -1) return CATS[i].id;
+    }
+    return null;
+  }
+  function inCatalog(n) {
+    for (var i = 0; i < CATS.length; i++) {
+      if (CATS[i].items.indexOf(n) !== -1) return true;
+    }
+    return false;
+  }
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2200);
+  }
+
+  /* ── 저장 ─────────────────────────────────── */
+  function load() {
+    var raw = null;
+    try { raw = window.localStorage.getItem(STORE_KEY); } catch (e) { raw = null; }
+    if (!raw) return;
+    try {
+      var d = JSON.parse(raw);
+      if (d && Object.prototype.toString.call(d.sel) === '[object Array]') {
+        for (var i = 0; i < d.sel.length; i++) {
+          if (typeof d.sel[i] === 'string' && d.sel[i]) state.sel[d.sel[i]] = true;
+        }
+      }
+      if (Object.prototype.toString.call(d.custom) === '[object Array]') {
+        for (var j = 0; j < d.custom.length; j++) {
+          if (typeof d.custom[j] === 'string' && d.custom[j] && state.custom.indexOf(d.custom[j]) === -1) {
+            state.custom.push(d.custom[j]);
+          }
+        }
+      }
+      if (d.filter === '0' || d.filter === '1' || d.filter === '2' || d.filter === 'all') state.filter = d.filter;
+      if (d.sort === 'count') state.sort = 'count';
+      if (d.tab) state.tab = d.tab;
+    } catch (e) { /* 저장된 값이 깨졌으면 무시하고 새로 시작 */ }
+  }
+  var storageWarned = false;
+
+  function save() {
+    try {
+      window.localStorage.setItem(STORE_KEY, JSON.stringify({
+        sel: Object.keys(state.sel),
+        custom: state.custom,
+        filter: state.filter,
+        sort: state.sort,
+        tab: state.tab
+      }));
+    } catch (e) {
+      /* 파일로 열었거나 저장이 막힌 브라우저: 이번 화면에서는 그대로 동작 */
+      if (!storageWarned) {
+        storageWarned = true;
+        toast('이 브라우저에서는 재료가 저장되지 않아요. 앱을 닫으면 선택이 사라져요.');
+      }
+    }
+  }
+
+  /* ── 매칭 계산 ────────────────────────────── */
+  function evaluate(r) {
+    var have = [], missing = [], basic = [], opt = [], core = 0;
+    for (var i = 0; i < r.ing.length; i++) {
+      var it = r.ing[i];
+      if (it.b) { basic.push(it); continue; }
+      if (it.o) { opt.push(it); continue; }
+      core++;
+      if (has(it.n)) have.push(it); else missing.push(it);
+    }
+    var pct = core ? Math.round((have.length / core) * 100) : 100;
+    return { r: r, have: have, missing: missing, basic: basic, opt: opt, core: core, pct: pct };
+  }
+  function allRows() {
+    var rows = [];
+    for (var i = 0; i < RECIPES.length; i++) rows.push(evaluate(RECIPES[i]));
+    return rows;
+  }
+  function cookableCount(rows) {
+    var n = 0;
+    for (var i = 0; i < rows.length; i++) if (rows[i].missing.length === 0) n++;
+    return n;
+  }
+
+  /* ── 상단 필터 ────────────────────────────── */
+  function renderFilter() {
+    var html = '';
+    for (var i = 0; i < FILTERS.length; i++) {
+      var f = FILTERS[i];
+      html += '<button type="button" class="fpill" data-filter="' + f.id + '" aria-pressed="' +
+        (state.filter === f.id ? 'true' : 'false') + '">' + f.label + '</button>';
+    }
+    elFilter.innerHTML = html;
+  }
+  function syncFilter() {
+    var btns = elFilter.querySelectorAll('[data-filter]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-filter') === state.filter ? 'true' : 'false');
+    }
+  }
+
+  /* ── 냉장고 재료 ──────────────────────────── */
+  function orderedSelection() {
+    var out = [];
+    var cat = catalogItems();
+    for (var i = 0; i < cat.length; i++) if (has(cat[i])) out.push(cat[i]);
+    for (var j = 0; j < state.custom.length; j++) if (has(state.custom[j])) out.push(state.custom[j]);
+    // 목록에 없는 이름(이전 버전 저장값 등)도 놓치지 않음
+    var keys = Object.keys(state.sel);
+    for (var k = 0; k < keys.length; k++) if (out.indexOf(keys[k]) === -1) out.push(keys[k]);
+    return out;
+  }
+
+  function renderPicked() {
+    var list = orderedSelection();
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      html += '<span class="pchip">' + esc(list[i]) +
+        '<button type="button" class="x" data-remove="' + esc(list[i]) + '" aria-label="' + esc(list[i]) + ' 빼기">✕</button></span>';
+    }
+    elPicked.innerHTML = html;
+    elFridgeCount.textContent = String(list.length);
+    elHint.textContent = hintText();
+  }
+
+  function hintText() {
+    if (selCount() === 0) {
+      return '냉장고에 있는 재료를 골라 보세요. 고른 재료로 만들 수 있는 요리를 바로 찾아 드려요.';
+    }
+    var rows = allRows();
+    var cook = 0, best = null, bestN = 0, useBest = null, useN = 0;
+    var unlock = {}, use = {};
+    for (var i = 0; i < rows.length; i++) {
+      var m = rows[i];
+      if (m.missing.length === 0) { cook++; continue; }
+      if (m.have.length === 0) continue;
+      if (m.missing.length === 1) {
+        var k = m.missing[0].n;
+        unlock[k] = (unlock[k] || 0) + 1;
+        if (unlock[k] > bestN) { bestN = unlock[k]; best = k; }
+      }
+      for (var j = 0; j < m.missing.length; j++) {
+        var u = m.missing[j].n;
+        use[u] = (use[u] || 0) + 1;
+        if (use[u] > useN) { useN = use[u]; useBest = u; }
+      }
+    }
+    var tail = '';
+    if (best) {
+      tail = '‘' + best + '’만 더 있으면 ' + bestN + '가지 요리를 바로 만들 수 있어요.';
+    } else if (useBest) {
+      tail = '‘' + useBest + '’가 있으면 ' + useN + '가지 요리에 쓸 수 있어요.';
+    }
+    if (cook > 0) {
+      return '지금 ' + cook + '가지 요리를 바로 만들 수 있어요.' + (tail ? ' ' + tail : '');
+    }
+    return tail || '고른 재료로 만들 수 있는 요리를 찾고 있어요.';
+  }
+
+  function matchedCount(rows) {
+    var n = 0;
+    for (var i = 0; i < rows.length; i++) if (rows[i].have.length > 0) n++;
+    return n;
+  }
+
+  function renderStats() {
+    var rows = allRows();
+    elStatIng.textContent = String(selCount());
+    elStatDish.textContent = String(matchedCount(rows));
+  }
+
+  function setPicker(open) {
+    state.open = open;
+    elPicker.hidden = !open;
+    elToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    elToggle.innerHTML = open ? '접기 <span class="caret" aria-hidden="true">▲</span>'
+      : '재료 고르기 <span class="caret" aria-hidden="true">▼</span>';
+  }
+
+  function renderTabs() {
+    var html = '';
+    for (var i = 0; i < CATS.length; i++) {
+      var c = CATS[i];
+      html += '<button type="button" class="cat-tab" data-tab="' + c.id + '" role="tab" aria-pressed="' +
+        (state.tab === c.id ? 'true' : 'false') + '">' + c.emoji + ' ' + c.name + '</button>';
+    }
+    html += '<button type="button" class="cat-tab" data-tab="my" role="tab" aria-pressed="' +
+      (state.tab === 'my' ? 'true' : 'false') + '">➕ 내 재료</button>';
+    elTabs.innerHTML = html;
+  }
+  function syncTabs() {
+    var btns = elTabs.querySelectorAll('[data-tab]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-tab') === state.tab ? 'true' : 'false');
+    }
+  }
+
+  function chipHTML(name, custom) {
+    var on = has(name);
+    return '<button type="button" class="chip" data-name="' + esc(name) + '" aria-pressed="' +
+      (on ? 'true' : 'false') + '">' + esc(name) +
+      (custom ? '<span class="del" data-del="' + esc(name) + '" aria-hidden="true">✕</span>' : '') +
+      '</button>';
+  }
+
+  function renderChips() {
+    var q = state.q;
+    var html = '';
+
+    if (q) {
+      var hit = 0, groups = '';
+      for (var i = 0; i < CATS.length; i++) {
+        var c = CATS[i], body = '';
+        for (var j = 0; j < c.items.length; j++) {
+          if (c.items[j].indexOf(q) !== -1) { body += chipHTML(c.items[j], false); hit++; }
+        }
+        if (body) groups += '<div class="group-label">' + c.emoji + ' ' + c.name + '</div>' + body;
+      }
+      var mine = '';
+      for (var k = 0; k < state.custom.length; k++) {
+        if (state.custom[k].indexOf(q) !== -1) { mine += chipHTML(state.custom[k], true); hit++; }
+      }
+      if (mine) groups += '<div class="group-label">➕ 내 재료</div>' + mine;
+      html = groups;
+      if (hit === 0) {
+        html = '<p class="no-result">‘<b>' + esc(q) + '</b>’에 맞는 재료가 없어요.<br>아래 <b>추가</b> 버튼을 누르면 내 재료로 저장돼요.</p>';
+      }
+      elGrid.innerHTML = html;
+      return;
+    }
+
+    if (state.tab === 'my') {
+      if (state.custom.length === 0) {
+        elGrid.innerHTML = '<p class="no-result">직접 추가한 재료가 없어요.<br>위 검색창에 재료 이름을 쓰고 <b>추가</b>를 누르면 여기에 저장돼요.</p>';
+        return;
+      }
+      var mineHtml = '<div class="group-label">➕ 내가 추가한 재료 <span style="font-weight:700">(' +
+        state.custom.length + ')</span></div>';
+      for (var m = 0; m < state.custom.length; m++) mineHtml += chipHTML(state.custom[m], true);
+      elGrid.innerHTML = mineHtml;
+      return;
+    }
+
+    for (var t = 0; t < CATS.length; t++) {
+      if (CATS[t].id !== state.tab) continue;
+      for (var s = 0; s < CATS[t].items.length; s++) html += chipHTML(CATS[t].items[s], false);
+      break;
+    }
+    elGrid.innerHTML = html;
+  }
+
+  function syncAddBtn() {
+    elAddBtn.disabled = state.q.length === 0;
+  }
+
+  function toggleIng(name) {
+    if (has(name)) {
+      delete state.sel[name];
+    } else {
+      state.sel[name] = true;
+    }
+    save();
+    renderPicked();
+    renderStats();
+    renderList();
+    syncGridStates();
+  }
+
+  // 그리드에서 누른 칩의 상태만 즉시 반영 (스크롤·포커스 유지)
+  function syncGridStates() {
+    var chips = elGrid.querySelectorAll('.chip[data-name]');
+    for (var i = 0; i < chips.length; i++) {
+      chips[i].setAttribute('aria-pressed', has(chips[i].getAttribute('data-name')) ? 'true' : 'false');
+    }
+  }
+
+  function addCustom(rawName) {
+    var name = rawName.replace(/\s+/g, ' ').trim().slice(0, 14);
+    if (!name) return;
+
+    if (inCatalog(name)) {
+      if (!has(name)) { state.sel[name] = true; }
+      state.tab = catOf(name) || state.tab;
+      state.q = '';
+      elSearch.value = '';
+      syncAddBtn();
+      save();
+      renderPicked();
+      renderStats();
+      renderList();
+      syncTabs();
+      renderChips();
+      toast('이미 목록에 있는 재료예요 — ‘' + name + '’를 선택했어요');
+      return;
+    }
+    if (state.custom.indexOf(name) === -1) {
+      state.custom.push(name);
+      toast('‘' + name + '’를 내 재료에 추가했어요');
+    } else {
+      toast('이미 내 재료에 있어요');
+    }
+    state.sel[name] = true;
+    state.q = '';
+    elSearch.value = '';
+    syncAddBtn();
+    save();
+    renderPicked();
+    renderStats();
+    renderList();
+    renderChips();
+  }
+
+  function removeCustom(name) {
+    var idx = state.custom.indexOf(name);
+    if (idx !== -1) state.custom.splice(idx, 1);
+    delete state.sel[name];
+    save();
+    renderPicked();
+    renderStats();
+    renderList();
+    renderChips();
+    toast('‘' + name + '’를 내 재료에서 지웠어요');
+  }
+
+  /* ── 목록 ─────────────────────────────────── */
+  function spicyBadge(level) {
+    var s = SPICY[level] || SPICY[0];
+    return '<span class="spicy ' + s.cls + '">' + s.icon + ' ' + s.label + '</span>';
+  }
+
+  function sortRows(rows) {
+    rows.sort(function (a, b) {
+      if (state.sort === 'count') {
+        if (b.have.length !== a.have.length) return b.have.length - a.have.length;
+        if (b.pct !== a.pct) return b.pct - a.pct;
+      } else {
+        if (b.pct !== a.pct) return b.pct - a.pct;
+        if (b.have.length !== a.have.length) return b.have.length - a.have.length;
+      }
+      if (a.r.time !== b.r.time) return a.r.time - b.r.time;
+      return a.r.name.localeCompare(b.r.name, 'ko');
+    });
+  }
+
+  function cardHTML(m, noSel) {
+    var r = m.r;
+    var ready = !noSel && m.missing.length === 0;
+    var chips = '';
+    if (!noSel) {
+      var i;
+      for (i = 0; i < Math.min(3, m.have.length); i++) {
+        chips += '<span class="mini have">' + esc(m.have[i].n) + '</span>';
+      }
+      for (i = 0; i < Math.min(3, m.missing.length); i++) {
+        chips += '<span class="mini need">' + esc(m.missing[i].n) + '</span>';
+      }
+      var rest = Math.max(0, m.have.length - 3) + Math.max(0, m.missing.length - 3);
+      if (rest > 0) chips += '<span class="mini rest">+' + rest + '</span>';
+    }
+    return '<article class="dish' + (noSel ? ' no-sel' : '') + '" data-id="' + esc(r.id) +
+      '" role="button" tabindex="0" aria-label="' + esc(r.name) + ' 레시피 자세히 보기">' +
+      '<div class="dish-top">' +
+        '<div class="dish-emoji" aria-hidden="true">' + r.emoji + '</div>' +
+        '<div class="dish-main">' +
+          '<div class="dish-name">' + esc(r.name) +
+            (ready ? '<span class="ready-badge">바로 가능</span>' : '') + '</div>' +
+          '<div class="dish-sub">' + spicyBadge(r.spicy) + '<i class="sep"></i>' + r.cat +
+            '<i class="sep"></i>⏱ ' + r.time + '분<i class="sep"></i>' + r.level + '</div>' +
+        '</div>' +
+      '</div>' +
+      (noSel ? '' :
+        '<div class="match"><div class="match-bar"><i class="match-fill" style="width:' + m.pct +
+        '%"></i></div><span class="match-pct">' + m.pct + '%</span></div>') +
+      (chips ? '<div class="row-chips">' + chips + '</div>' : '') +
+      '</article>';
+  }
+
+  function renderList() {
+    var rows = allRows();
+    var f = state.filter;
+    var lv = f === 'all' ? null : parseInt(f, 10);
+    var filtered = [];
+    for (var i = 0; i < rows.length; i++) {
+      if (lv === null || rows[i].r.spicy === lv) filtered.push(rows[i]);
+    }
+    var noSel = selCount() === 0;
+    var matched = [], zeros = [];
+    for (var j = 0; j < filtered.length; j++) {
+      var m = filtered[j];
+      if (noSel || m.have.length > 0 || m.missing.length === 0) matched.push(m);
+      else zeros.push(m);
+    }
+    sortRows(matched);
+    sortRows(zeros);
+
+    var html = '';
+    if (filtered.length === 0) {
+      html = '<div class="empty"><span class="big">🌶️</span>고른 매운 정도에 맞는 요리가 없어요.<br>' +
+        '필터를 바꾸면 더 많은 요리를 볼 수 있어요.' +
+        '<br><button type="button" data-reset-filter="1">매운 정도 전체로 보기</button></div>';
+      elListTitle.innerHTML = '추천 요리 <span>0가지</span>';
+      elList.innerHTML = html;
+      return;
+    }
+
+    for (var k = 0; k < matched.length; k++) html += cardHTML(matched[k], noSel);
+
+    var hidden = zeros.length;
+    if (hidden > 0) {
+      if (state.showAll) {
+        for (var z = 0; z < zeros.length; z++) html += cardHTML(zeros[z], false);
+      } else {
+        html += '<button type="button" class="more" data-more="1">재료가 더 필요한 요리 ' + hidden + '가지 더 보기</button>';
+      }
+    }
+    if (noSel) {
+      html += '<div class="empty" style="margin-top:10px"><span class="big">🧊</span>' +
+        '냉장고 재료를 고르면<br>재료가 얼마나 맞는지 <b>%</b>로 보여 드려요.</div>';
+    }
+    elList.innerHTML = html;
+    elListTitle.innerHTML = '추천 요리 <span>' + (noSel ? filtered.length : matched.length) + '가지</span>';
+  }
+
+  /* ── 상세 시트 ────────────────────────────── */
+  function ingTableHTML(m) {
+    var r = m.r;
+    var html = '<div class="ing-table">';
+    var i;
+    for (i = 0; i < r.ing.length; i++) {
+      var it = r.ing[i];
+      if (it.b || it.o) continue;
+      var own = has(it.n);
+      html += '<div class="ing-row ' + (own ? 'have' : 'miss') + '">' +
+        '<i class="ing-dot"></i><span class="ing-name">' + esc(it.n) + '</span>' +
+        '<span class="ing-amt">' + esc(it.a) + '</span>' +
+        '<span class="ing-state">' + (own ? '보유' : '없음') + '</span></div>';
+    }
+    if (m.basic.length) {
+      html += '<div class="ing-sub">기본 양념</div>';
+      for (i = 0; i < m.basic.length; i++) {
+        html += '<div class="ing-row base"><i class="ing-dot"></i><span class="ing-name">' +
+          esc(m.basic[i].n) + '</span><span class="ing-amt">' + esc(m.basic[i].a) +
+          '</span><span class="ing-state">기본</span></div>';
+      }
+    }
+    if (m.opt.length) {
+      html += '<div class="ing-sub">선택 재료</div>';
+      for (i = 0; i < m.opt.length; i++) {
+        var own2 = has(m.opt[i].n);
+        html += '<div class="ing-row opt ' + (own2 ? 'have' : '') + '"><i class="ing-dot"></i><span class="ing-name">' +
+          esc(m.opt[i].n) + '</span><span class="ing-amt">' + esc(m.opt[i].a) +
+          '</span><span class="ing-state">' + (own2 ? '보유' : '선택') + '</span></div>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function sumBoxHTML(m) {
+    var total = m.have.length + m.missing.length;
+    if (m.missing.length === 0) {
+      return '<div class="sum-box ok"><div class="txt">지금 바로 만들 수 있어요!' +
+        '<small>필요한 재료 ' + total + '가지를 모두 갖고 있어요</small></div>' +
+        '<div class="bar"><i style="width:100%"></i></div></div>';
+    }
+    var names = [];
+    for (var i = 0; i < m.missing.length && i < 3; i++) names.push(m.missing[i].n);
+    var more = m.missing.length > 3 ? ' 외 ' + (m.missing.length - 3) + '개' : '';
+    var sub = m.have.length === 0
+      ? '필요한 재료 ' + total + '가지가 아직 없어요'
+      : names.join(', ') + more + '만 더 있으면 돼요';
+    return '<div class="sum-box"><div class="txt">재료 ' + total + '가지 중 ' + m.have.length +
+      '가지 보유<small>' + esc(sub) + '</small></div>' +
+      '<div class="bar"><i style="width:' + m.pct + '%"></i></div></div>';
+  }
+
+  function openSheet(id) {
+    var r = findRecipe(id);
+    if (!r) return;
+    var m = evaluate(r);
+
+    var hero = '<div class="d-hero"><div class="d-emoji" aria-hidden="true">' + r.emoji + '</div>' +
+      '<div><div class="d-name" id="dName">' + esc(r.name) + '</div>' +
+      '<div class="d-tags" id="dMeta">' + spicyBadge(r.spicy) +
+      '<span class="tag">⏱ ' + r.time + '분</span>' +
+      '<span class="tag">난이도 ' + r.level + '</span>' +
+      '<span class="tag">' + r.serve + '</span>' +
+      '<span class="tag">' + r.cat + '</span></div></div></div>';
+
+    var steps = '';
+    for (var i = 0; i < r.steps.length; i++) {
+      steps += '<div class="step"><span class="step-n">' + (i + 1) + '</span><span>' +
+        esc(r.steps[i]) + '</span></div>';
+    }
+
+    var tip = r.tip ? '<div class="tip"><b>🍳 꿀팁</b>' + esc(r.tip) + '</div>' : '';
+
+    sheetBody.innerHTML = hero + sumBoxHTML(m) +
+      '<div class="d-cols">' +
+        '<section><h3 class="sec-h">재료 <span class="cnt">' + (m.have.length + m.missing.length) +
+        '가지' + (m.basic.length ? ' + 기본 양념' : '') + '</span></h3>' +
+        ingTableHTML(m) + tip + '</section>' +
+        '<section><h3 class="sec-h">조리 순서 <span class="cnt">' + r.steps.length + '단계</span></h3>' +
+        '<div class="steps">' + steps + '</div></section>' +
+      '</div>';
+
+    ytBtn.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(r.name + ' 간단 레시피');
+
+    lastFocus = document.activeElement;
+    sheetWrap.hidden = false;
+    document.body.classList.add('locked');
+    void sheetWrap.offsetHeight;
+    sheetWrap.classList.add('show');
+    sheetBody.scrollTop = 0;
+    if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    try { sheetClose.focus({ preventScroll: true }); } catch (e) { sheetClose.focus(); }
+  }
+
+  function closeSheet() {
+    if (sheetWrap.hidden) return;
+    sheetWrap.classList.remove('show');
+    document.body.classList.remove('locked');
+    closeTimer = setTimeout(function () {
+      sheetWrap.hidden = true;
+      sheetBody.innerHTML = '';
+    }, 300);
+    if (lastFocus && lastFocus.focus) {
+      try { lastFocus.focus({ preventScroll: true }); } catch (e) { lastFocus.focus(); }
+    }
+  }
+
+  /* ── 이벤트 ───────────────────────────────── */
+  elToggle.addEventListener('click', function () {
+    setPicker(!state.open);
+  });
+
+  $('#donePick').addEventListener('click', function () {
+    setPicker(false);
+    var head = document.querySelector('.list-head');
+    if (head) {
+      try { head.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      catch (e) { head.scrollIntoView(); }
+    }
+  });
+
+  $('#clearAll').addEventListener('click', function () {
+    if (selCount() === 0) { toast('선택한 재료가 없어요'); return; }
+    var ok = true;
+    try { ok = window.confirm('선택한 재료를 모두 지울까요?'); } catch (e) { ok = true; }
+    if (!ok) return;
+    state.sel = {};
+    state.showAll = false;
+    save();
+    renderPicked();
+    renderStats();
+    renderList();
+    setTimeout(syncGridStates, 0);
+    renderChips();
+    toast('선택한 재료를 모두 지웠어요');
+  });
+
+  elFilter.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-filter]');
+    if (!btn) return;
+    state.filter = btn.getAttribute('data-filter');
+    state.showAll = false;
+    save();
+    syncFilter();
+    renderList();
+  });
+
+  elSortBtn.addEventListener('click', function () {
+    state.sort = state.sort === 'rate' ? 'count' : 'rate';
+    elSortLabel.textContent = state.sort === 'rate' ? '매칭률 순' : '보유 재료 순';
+    save();
+    renderList();
+    toast(state.sort === 'rate' ? '재료가 많이 맞는 순서로 정렬했어요' : '보유한 재료가 많은 순서로 정렬했어요');
+  });
+
+  elTabs.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-tab]');
+    if (!btn) return;
+    state.tab = btn.getAttribute('data-tab');
+    state.q = '';
+    elSearch.value = '';
+    syncAddBtn();
+    save();
+    syncTabs();
+    renderChips();
+  });
+
+  elGrid.addEventListener('click', function (e) {
+    var del = e.target.closest('[data-del]');
+    if (del) {
+      e.preventDefault();
+      e.stopPropagation();
+      removeCustom(del.getAttribute('data-del'));
+      return;
+    }
+    var chip = e.target.closest('.chip[data-name]');
+    if (!chip) return;
+    toggleIng(chip.getAttribute('data-name'));
+  });
+
+  elSearch.addEventListener('input', function () {
+    state.q = elSearch.value.trim();
+    syncAddBtn();
+    renderChips();
+  });
+  elSearch.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (state.q) addCustom(state.q);
+    }
+  });
+  elAddBtn.addEventListener('click', function () {
+    if (state.q) addCustom(state.q);
+  });
+
+  elPicked.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-remove]');
+    if (!btn) return;
+    var name = btn.getAttribute('data-remove');
+    if (has(name)) {
+      delete state.sel[name];
+      save();
+      renderPicked();
+      renderStats();
+      renderList();
+      syncGridStates();
+    }
+  });
+
+  elList.addEventListener('click', function (e) {
+    if (e.target.closest('[data-more]')) {
+      state.showAll = true;
+      renderList();
+      return;
+    }
+    if (e.target.closest('[data-reset-filter]')) {
+      state.filter = 'all';
+      syncFilter();
+      save();
+      renderList();
+      return;
+    }
+    var card = e.target.closest('.dish');
+    if (card) openSheet(card.getAttribute('data-id'));
+  });
+
+  elList.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var card = e.target.closest('.dish');
+    if (!card) return;
+    e.preventDefault();
+    openSheet(card.getAttribute('data-id'));
+  });
+
+  sheetClose.addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', closeSheet);
+
+  document.addEventListener('keydown', function (e) {
+    if (sheetWrap.hidden) return;
+    if (e.key === 'Escape') { closeSheet(); return; }
+    if (e.key !== 'Tab') return;
+    var focusables = sheetWrap.querySelectorAll('button, a[href]');
+    if (!focusables.length) return;
+    var first = focusables[0], last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
+  /* ── 시작 ─────────────────────────────────── */
+  function init() {
+    load();
+    renderFilter();
+    renderTabs();
+    setPicker(selCount() === 0);
+    syncAddBtn();
+    renderChips();
+    renderPicked();
+    renderStats();
+    renderList();
+    elSortLabel.textContent = state.sort === 'rate' ? '매칭률 순' : '보유 재료 순';
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
